@@ -82,9 +82,7 @@ jobs:
     permissions:
       contents: write  # changesets opens and updates the version pull request, and pushes its tags.
       pull-requests: write  # Open and update the "Version Packages" pull request.
-      # The OIDC token npm exchanges for permission to publish. Without it there is no
-      # credential at all.
-      id-token: write
+      id-token: write  # OIDC for npm trusted publishing; with no token, this is the only credential.
     steps:
       # Mint a short-lived token from the `theokit-release` GitHub App instead of using
       # the job's own GITHUB_TOKEN. This exists for ONE reason: GitHub does not start
