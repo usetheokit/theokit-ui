@@ -80,8 +80,7 @@ jobs:
     # runner, and this is the job it costs the most to leave open.
     timeout-minutes: 30
     permissions:
-      # changesets opens and updates the version pull request, and pushes its tags.
-      contents: write
+      contents: write  # changesets opens and updates the version pull request, and pushes its tags.
       pull-requests: write  # Open and update the "Version Packages" pull request.
       # The OIDC token npm exchanges for permission to publish. Without it there is no
       # credential at all.
