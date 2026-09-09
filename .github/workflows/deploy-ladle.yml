@@ -12,9 +12,11 @@ on:
       - ".github/workflows/deploy-ladle.yml"
   workflow_dispatch: {}
 
+# `contents: read` and nothing else at the workflow level. `deployments: write` moved onto the
+# job that performs the deploy, so it is not the default for every job this file might later
+# gain. zizmor reports the workflow-level grant as `excessive-permissions`, high.
 permissions:
   contents: read
-  deployments: write
 
 concurrency:
   group: deploy-ladle-${{ github.ref }}
@@ -24,6 +26,19 @@ concurrency:
 
 jobs:
   deploy:
+    # The environment exists for its DEPLOYMENT BRANCH POLICY, restricted to `main`. This
+    # workflow carries `workflow_dispatch: {}`, so before the policy anyone with write access
+    # could dispatch it from an arbitrary branch and the job would hold the Cloudflare deploy
+    # credentials there. The policy makes the job unrunnable outside `main`.
+    #
+    # The credentials themselves stay repository secrets -- their values are write-only, so
+    # nothing could copy them into the environment. What is bought is the branch policy, not
+    # secret isolation.
+    environment: ladle
+    # The write this job actually performs, declared where it is used rather than inherited.
+    permissions:
+      contents: read
+      deployments: write
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
