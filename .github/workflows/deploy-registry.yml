@@ -31,6 +31,7 @@ concurrency:
 
 jobs:
   build-registry:
+    name: Build the registry
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -106,6 +107,7 @@ jobs:
           path: packages/ui/_site
 
   deploy:
+    name: Deploy the registry
     needs: build-registry
     runs-on: ubuntu-latest
     timeout-minutes: 20
