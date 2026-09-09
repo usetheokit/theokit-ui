@@ -26,6 +26,7 @@ concurrency:
 
 jobs:
   deploy:
+    name: Deploy the catalog
     # The environment exists for its DEPLOYMENT BRANCH POLICY, restricted to `main`. This
     # workflow carries `workflow_dispatch: {}`, so before the policy anyone with write access
     # could dispatch it from an arbitrary branch and the job would hold the Cloudflare deploy
