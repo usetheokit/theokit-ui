@@ -16,7 +16,7 @@ on:
 # job that performs the deploy, so it is not the default for every job this file might later
 # gain. zizmor reports the workflow-level grant as `excessive-permissions`, high.
 permissions:
-  contents: read
+  contents: read # Read the tree to build the catalog from.
 
 concurrency:
   group: deploy-ladle-${{ github.ref }}
@@ -26,6 +26,7 @@ concurrency:
 
 jobs:
   deploy:
+    name: Deploy the catalog
     # The environment exists for its DEPLOYMENT BRANCH POLICY, restricted to `main`. This
     # workflow carries `workflow_dispatch: {}`, so before the policy anyone with write access
     # could dispatch it from an arbitrary branch and the job would hold the Cloudflare deploy
@@ -37,8 +38,8 @@ jobs:
     environment: ladle
     # The write this job actually performs, declared where it is used rather than inherited.
     permissions:
-      contents: read
-      deployments: write
+      contents: read # Read the tree to build the catalog from.
+      deployments: write # Record the deployment. Declared on the job that performs it.
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
