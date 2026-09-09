@@ -15,6 +15,16 @@ on:
       - main
       - develop
 
+# Deny by default. Without this block the workflow inherits whatever the repository default is,
+# which on older repositories is write access to everything -- and the inheritance is silent,
+# so nothing in the file shows what a job was actually granted.
+#
+# Verified before adding rather than assumed safe: every job in this file already declares its
+# own `contents: read`, so no job is losing a permission it uses today. What this adds is the
+# floor for the NEXT job somebody writes here.
+permissions:
+  contents: read
+
 concurrency:
   group: ci-${{ github.ref }}
   # A cancelled run on an integration branch leaves the commit with no verdict,
