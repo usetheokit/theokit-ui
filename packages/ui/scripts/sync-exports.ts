@@ -60,6 +60,11 @@ const BASE_EXPORTS: Record<string, ExportEntry | string> = {
   // See `wiki/rfcs/0002-slide.md` T3.2.
   "./slide/themes/default.css": "./dist/slide/themes/default.css",
   "./slide/themes/violet-forge.css": "./dist/slide/themes/violet-forge.css",
+  // Metadata, not an entry point — a plain string, and the only entry here whose target
+  // is not under `dist/`. Without it Node answers ERR_PACKAGE_PATH_NOT_EXPORTED to
+  // `require('@theokit/ui/package.json')`, which bundlers, test-runner resolvers and
+  // version telemetry all read. Reproduced against a packed tarball before it was added.
+  "./package.json": "./package.json",
 };
 
 /**

@@ -30,6 +30,7 @@
     "./fonts-cdn.css": "./dist/fonts-cdn.css",
     "./slide/themes/default.css": "./dist/slide/themes/default.css",
     "./slide/themes/violet-forge.css": "./dist/slide/themes/violet-forge.css",
+    "./package.json": "./package.json",
     "./agent-composer": {
       "types": "./dist/components/composites/agent-composer/index.d.ts",
       "import": "./dist/composites/agent-composer/index.js"

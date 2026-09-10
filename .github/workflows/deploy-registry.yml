@@ -31,6 +31,7 @@ concurrency:
 
 jobs:
   build-registry:
+    name: Build the registry
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -45,29 +46,16 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
-        with:
-          run_install: false
-
-      - name: Setup Node
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version-file: '.nvmrc'
-          cache: pnpm
-          # The cache key must change when the package manager does. setup-node keys the
-          # pnpm store on the lockfile alone, so a pnpm 9 -> 10 bump leaves the key
-          # identical and the job restores a store the new pnpm reads as inconsistent —
-          # `ERR_PNPM_MISSING_PACKAGE_INDEX_FILE`, on a package the lockfile does list.
-          # package.json carries `packageManager`, so including it ties the cache to the
-          # pnpm that wrote it.
-          cache-dependency-path: |
-            pnpm-lock.yaml
-            package.json
-            packages/ui/package.json
-
-      - name: Install
-        run: pnpm install --frozen-lockfile
+      # `@v1` is a moving ref by design; what the action RUNS stays pinned by digest inside it,
+      # Node from `.nvmrc`, pnpm from `packageManager`. The frozen install is the action's
+      # default, so the separate step is gone.
+      #
+      # THE THIRD CACHE PATH IS DROPPED ON PURPOSE — see the fuller note in `deploy-ladle.yml`.
+      # Short version: measured over the last twenty commits touching `packages/ui/package.json`,
+      # 19 changed it without touching the lockfile, and every one of those changed `"version"` or
+      # `"sideEffects"`. Neither alters the pnpm store, so the third path discarded a warm store
+      # on every release and protected nothing.
+      - uses: usetheokit/shared-workflows/actions/setup@v1 # zizmor: ignore[unpinned-uses]
 
       - name: Build registry
         run: pnpm registry:build
@@ -119,6 +107,7 @@ jobs:
           path: packages/ui/_site
 
   deploy:
+    name: Deploy the registry
     needs: build-registry
     runs-on: ubuntu-latest
     timeout-minutes: 20

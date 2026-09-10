@@ -26,10 +26,19 @@ on:
     branches: [main]
   workflow_dispatch:
 
-concurrency: ${{ github.workflow }}-${{ github.ref }}
+# Written in map form only to state the second line. The scalar form defaults to
+# `cancel-in-progress: false`, which is already what a release needs -- but the default is silent,
+# and a linter that cannot tell "chose false" from "never considered it" flags it on every audit.
+#
+# `false` is the whole point, and it is the opposite of a CI leg. Cancelling a superseded CI run
+# discards a verdict nobody will read. Cancelling a superseded RELEASE run discards a half-finished
+# publish: versions bumped and committed but not published, or published with no tag and no release.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
 
 permissions:
-  contents: read
+  contents: read # Read the tree; the publishing job below declares its own wider scope.
 
 jobs:
   # The last line, for the path that reached a release without passing through a pull request.
@@ -41,7 +50,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
-      contents: read
+      contents: read # Read the tree; the publishing job below declares its own wider scope.
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -51,17 +60,29 @@ jobs:
   release:
     needs: release-channel
     name: Release via Changesets (theokit-ui)
-    runs-on: ubuntu-latest
+    # The environment exists for its DEPLOYMENT BRANCH POLICY, which is restricted to `main`.
+    #
+    # That is not decoration. This workflow carries `workflow_dispatch`, so before the policy
+    # existed anyone with write access could dispatch it from an arbitrary branch and the job
+    # would mint a release App token there. The policy makes the job unrunnable outside `main`,
+    # which is the only branch a release may be cut from anyway.
+    #
+    # NO reviewer gate: a solo-maintainer repository cannot satisfy an approval gate, and a gate
+    # only its author can bypass teaches bypassing. The environment carries one rule.
+    #
+    # The App credentials stay ORGANIZATION secrets rather than moving in here: an org secret
+    # cannot be scoped to a repository environment, and their values are write-only, so nothing
+    # could copy them. The protection bought is the branch policy, not secret isolation -- said
+    # plainly because `environment:` is easy to mistake for the second.
+    environment: release
+    runs-on: ubuntu-24.04
     # A ceiling well under GitHub's 6-hour default keeps a wedged job from holding a
     # runner, and this is the job it costs the most to leave open.
     timeout-minutes: 30
     permissions:
-      # changesets opens and updates the version pull request, and pushes its tags.
-      contents: write
-      pull-requests: write
-      # The OIDC token npm exchanges for permission to publish. Without it there is no
-      # credential at all.
-      id-token: write
+      contents: write # changesets opens and updates the version pull request, and pushes its tags.
+      pull-requests: write # Open and update the "Version Packages" pull request.
+      id-token: write # OIDC for npm trusted publishing; with no token, this is the only credential.
     steps:
       # Mint a short-lived token from the `theokit-release` GitHub App instead of using
       # the job's own GITHUB_TOKEN. This exists for ONE reason: GitHub does not start
@@ -107,25 +128,20 @@ jobs:
           # changesets reads tags to decide what is unpublished; a shallow clone hides them.
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
-        # No `version:` — `packageManager` in package.json is already the authority on the
-        # pnpm version, and pinning it twice creates two places to update.
-
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      # `@v1` is a moving ref by design; what the action RUNS stays pinned by digest inside it,
+      # Node from `.nvmrc`, pnpm from `packageManager`. It carries the cache key this block
+      # spelled out — `package.json` beside `pnpm-lock.yaml`, so a pnpm major bump invalidates the
+      # store instead of restoring one the new pnpm reads as inconsistent.
+      #
+      # THE THIRD CACHE PATH IS DROPPED ON PURPOSE. This block also keyed on
+      # `packages/ui/package.json`, and measured over the last twenty commits touching that file,
+      # 19 changed it WITHOUT touching the lockfile — but what they changed was `"version"` (a
+      # release bump) or `"sideEffects"`. Neither alters the pnpm store, which holds external
+      # dependencies keyed by their own versions. So the third path was discarding a warm store on
+      # every release and protecting nothing. Dropping it is a small win, not a loss.
+      - uses: usetheokit/shared-workflows/actions/setup@v1 # zizmor: ignore[unpinned-uses]
         with:
-          # .nvmrc, for the same single-authority reason.
-          node-version-file: '.nvmrc'
-          cache: 'pnpm'
-          # The cache key must change when the package manager does. setup-node keys the
-          # pnpm store on the lockfile alone, so a pnpm 9 -> 10 bump leaves the key
-          # identical and the job restores a store the new pnpm reads as inconsistent —
-          # `ERR_PNPM_MISSING_PACKAGE_INDEX_FILE`, on a package the lockfile does list.
-          # package.json carries `packageManager`, so including it ties the cache to the
-          # pnpm that wrote it.
-          cache-dependency-path: |
-            pnpm-lock.yaml
-            package.json
-            packages/ui/package.json
+          install: 'false'
           # NO `registry-url`. It looks harmless and is not: setup-node writes
           # `//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}` into an npmrc
           # UNCONDITIONALLY and points NPM_CONFIG_USERCONFIG at it, then exports
