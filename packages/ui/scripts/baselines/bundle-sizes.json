@@ -1,7 +1,7 @@
 {
   "$comment": "Baseline output sizes for the published artifacts. Maintained by scripts/validate-bundle-size.ts. Update via `pnpm tsx scripts/validate-bundle-size.ts --update` when a legitimate size change lands; commit the diff. Sizes are bytes, tolerance ±5% (configurable in the script). NOTE: dist/components.css is intentionally NOT gated here — it is a Tailwind v4 `@source`-scanned generated artifact whose exact byte size is environment-sensitive (the v3/v4 `@import \"tailwindcss\"` resolution + scan behavior differs across pnpm layouts: ~470KB locally vs ~104KB on CI runners, both valid). Its size + content are bounded by the environment-robust `dogfood:precompiled-utilities` gate (5KB floor / 600KB ceiling + content assertions). Byte-exact ±5% is the wrong tool for a generated CSS scan; this gate stays focused on the deterministic shipped JS/dts bundles.",
   "files": {
-    "dist/index.js": 118113,
+    "dist/index.js": 118194,
     "dist/index.d.ts": 12738,
     "dist/styles.css": 5371,
     "dist/styles-v3-legacy.css": 2524,
@@ -9,8 +9,8 @@
     "dist/tokens-v4.css": 8190,
     "dist/fonts.css": 2569,
     "dist/fonts-cdn.css": 1295,
-    "dist/slide/index.js": 414,
-    "dist/slide-deck/index.js": 36205,
+    "dist/slide/index.js": 445,
+    "dist/slide-deck/index.js": 36236,
     "dist/vite-plugin.js": 2624,
     "dist/vite-plugin.d.ts": 1223,
     "dist/preset.css": 991,

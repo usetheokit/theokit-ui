@@ -9,6 +9,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { slideMarkdownComponents } from "./markdown-components.js";
 /**
  * `<Slide>` — view-only primitive that renders markdown + YAML frontmatter
  * into a themed, fixed-aspect surface. Lives in the isolated subpath
@@ -120,7 +121,10 @@ export const Slide: FC<SlideProps> = ({
   minScale,
   maxScale,
   onValidationError,
-  components,
+  // #154 — markdown gets this package's defaults unless the consumer decides otherwise. A default
+  // and never a merge: a consumer passing `components` is making a decision, and merging ours over
+  // theirs would make the default a ceiling instead of a floor.
+  components = slideMarkdownComponents,
   plugins,
   className,
   "aria-label": ariaLabel = "Slide",

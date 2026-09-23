@@ -1,3 +1,7 @@
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+
 import { act } from "react";
 import { hydrateRoot } from "react-dom/client";
 import { renderToString } from "react-dom/server";
@@ -145,5 +149,44 @@ describe("ThemeSwitcher hydrates without a mismatch (#155)", () => {
       "the probe saw no error over a deliberate server/client divergence, so a green result " +
         "from the two assertions above would prove nothing",
     ).toBeGreaterThan(0);
+  });
+});
+
+describe("the announcement does not depend on what only the client knows (#155)", () => {
+  /**
+   * The structural half, and the one the runtime tests above cannot reach.
+   *
+   * `ThemeSwitcher` renders `mode` as TEXT in an `aria-live` region. `mode` is resolved by
+   * `ThemeProvider` from `localStorage` and `prefers-color-scheme` in a `useEffect`
+   * (`theme-provider.tsx:500`) — i.e. AFTER hydration. The server cannot know either value; that is
+   * not a bug in the provider, it is what a server is.
+   *
+   * So a text node whose content is `mode` is a hydration mismatch by construction whenever the
+   * client resolves to something other than `defaultMode`. The runtime tests above pin
+   * `matchMedia` before BOTH renders, which makes server and client agree — they prove the tree
+   * hydrates, and they cannot prove this, because the divergence needs the two halves to disagree
+   * and a fixed stub makes them agree.
+   *
+   * This asserts on the SOURCE instead. The property is "no client-only value is rendered as text",
+   * and it stays true no matter which stub a future test installs.
+   */
+  it("test_mode_is_not_rendered_as_a_text_node", () => {
+    const here = dirname(fileURLToPath(import.meta.url));
+    const source = readFileSync(join(here, "theme-switcher.tsx"), "utf8");
+
+    // `{mode}` inside JSX children — not in an attribute, where a mismatch costs nothing visible
+    // and React does not report #418.
+    const asText = /(?<!=\{)\{\s*mode\s*\}(?![^<>]*=)/.test(
+      source.replace(/`[^`]*`/g, ""), // template literals are attribute values here
+    );
+
+    expect(
+      asText,
+      "`mode` is rendered as a text node. It is resolved after hydration from localStorage and " +
+        "prefers-color-scheme, so the server renders the default and the client may render " +
+        "something else — React #418, on every SSR page that mounts this. An aria-live region is " +
+        "announced when it CHANGES, so rendering it empty on the server and filling it on the " +
+        "client is not a loss: it is what a live region is for.",
+    ).toBe(false);
   });
 });
