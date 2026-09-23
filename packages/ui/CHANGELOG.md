@@ -1,5 +1,34 @@
 # Changelog
 
+## 1.11.0
+
+### Minor Changes
+
+- f1dc64d: `Slide` renders markdown through this package's own components instead of bare tags.
+
+  `components` was already public API and nothing supplied a default, so every consumer that did not
+  pass one rendered a user's markdown as raw `<a>` and `<img>`: a link opening wherever its href
+  pointed, with no `rel`, and an image with no `alt` and no lazy loading. The default now passes every
+  href through `safeHref`, gives an external link `rel="noopener noreferrer"`, and gives an image an
+  empty `alt` rather than none when the markdown omitted it.
+
+  Passing `components` still replaces the default wholesale — it is a fallback, not a merge, so an
+  application that supplied its own map behaves exactly as before.
+
+### Patch Changes
+
+- f1dc64d: `ThemeSwitcher` no longer triggers a React hydration mismatch.
+
+  Its screen-reader announcement rendered `mode` as a text node, and `ThemeProvider` resolves `mode`
+  from `localStorage` and `prefers-color-scheme` inside an effect. The server cannot know either, so
+  it rendered the default and the client frequently rendered something else — a mismatch by
+  construction, which React answers by discarding the server markup for that subtree (minified error
+  #418).
+
+  The announcement is now empty until the component has mounted, so the server and the client's first
+  render agree. Nothing a sighted user sees changed, and the announcement still fires on every
+  subsequent change.
+
 ## 1.10.2
 
 ### Patch Changes
@@ -440,6 +469,7 @@
 ## [Unreleased]
 
 ### Added
+
 - **ci:** `Promotion gate` refuses a pull request into `develop` that does not come from this repository's own `workspace`. `git-safety.md` has always said so and `validate-command.sh:245` has always blocked it — for a `git merge` typed locally, which is not how any of this repository's 45 promotions landed (usetheokit/theokit#606)
 
 - `space` and `motion.stagger` on `Theme`, so every token the package declares can be set through

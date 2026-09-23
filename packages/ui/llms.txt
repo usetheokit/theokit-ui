@@ -7,7 +7,7 @@ This file follows the [llms.txt convention](https://llmstxt.org/) and gives an L
 ## Project metadata
 
 - **npm package:** `@theokit/ui`
-- **Current version:** `1.10.2` (npm dist-tag `latest`)
+- **Current version:** `1.11.0` (npm dist-tag `latest`)
 - **License:** Apache-2.0
 - **Repository:** `https://github.com/usetheokit/theokit-ui`
 - **Companion package (generic primitives):** `@usetheo/ui` — `https://github.com/usetheodev/usetheo-ui`
