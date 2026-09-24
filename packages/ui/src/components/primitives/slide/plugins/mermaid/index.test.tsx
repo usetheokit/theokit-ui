@@ -76,22 +76,52 @@ describe("mermaidPlugin (T8.1)", () => {
     // With mermaid INSTALLED (auto-install-peers), invalid Mermaid syntax hits
     // the parse error path; the host enters data-state="error" + aria-label
     // reflects the error message. Source code stays visible as fallback.
+    //
+    // The cold dynamic import is paid HERE, before the assertion window opens.
+    //
+    // The component's effect does `await import("mermaid")` — mermaid 11.x plus its
+    // transitive graph, through vite's transform pipeline — and that cost used to land
+    // inside the `waitFor` below, whose budget is the 5000ms `asyncUtilTimeout` set in
+    // src/test/setup.ts. Measured over eight full-suite runs on a loaded machine, this case
+    // took 3354 / 3741 / 4143 / 4254 / 4557 / 4909 / 4957 / 8812 ms against that 5000ms:
+    // two runs cleared it by 43ms and 91ms, and the 8812ms run passed only because a starved
+    // event loop ran the DOM check before the deadline timer. The outcome was decided by
+    // callback ordering rather than by the assertion, which is the definition of flaky —
+    // and when it lost, `waitFor` reported a timeout with the host still at
+    // data-state="loading": the clock ran out, and nothing said what had not happened.
+    //
+    // No timeout is raised. vitest.config.ts already sets testTimeout: 20000 for exactly
+    // this cost ("a cold dynamic import of a heavy barrel can momentarily exceed vitest's
+    // 5s default"), and that ceiling applies to the test body — so warming the module here
+    // puts the cost under the budget that was written for it, and leaves the 5000ms below
+    // covering only `mermaid.render()` rejecting against an already-loaded module.
+    //
+    // `mermaid` is an OPTIONAL peer, so the warm-up must not decide the outcome: when it is
+    // absent the component takes its "not installed" branch, which this test also accepts.
+    // See usetheokit/theokit-ui#51.
+    //
+    // Do not drop this line as redundant. Instrumented over two full-suite runs whose import
+    // cost differed by 2.3x (839ms and 1943ms), the `waitFor` window below was 189ms and
+    // 179ms — invariant, because the load-sensitive work is no longer inside it. Twelve
+    // further full-suite runs are green, two of them (5292ms and 5168ms in total) past the
+    // 5000ms that used to be this assertion's whole budget.
+    await import("mermaid").catch(() => undefined);
+
     const { container } = render(<MermaidDiagram source="this is not valid mermaid" />);
+
+    // The state is asserted BY VALUE, not by the presence of a node. Waiting for
+    // `querySelector("[data-state='error']")` to be truthy fails with "expected null to be
+    // truthy", which names neither the state that was observed nor the one that was wanted.
+    const readState = () =>
+      container.querySelector("[data-theo-slide-mermaid]")?.getAttribute("data-state") ?? "absent";
     await waitFor(() => {
-      const host = container.querySelector("[data-state='error']");
-      expect(host).toBeTruthy();
+      expect(readState(), "MermaidDiagram never left its loading state").toBe("error");
     });
+
     const host = container.querySelector("[data-state='error']");
     expect(host?.getAttribute("role")).toBe("img");
     expect(host?.getAttribute("aria-label")).toMatch(/render failed|not installed/i);
     // Source still visible for debugging / print fallback.
     expect(container.querySelector("pre")?.textContent).toContain("not valid mermaid");
-    // No per-test timeout override here on purpose. vitest.config.ts sets 20s precisely
-    // because "a cold dynamic import of a heavy barrel can momentarily exceed vitest's 5s
-    // default" under full-suite load — this test imports the whole markdown + mermaid stack
-    // and is exactly that case. A local 10s undercut the global ceiling that exists for it,
-    // and the waitFor carried its own 5s below the 5s set in src/test/setup.ts. Both made
-    // the test fail on a loaded machine while the decision meant to prevent that sat unused
-    // one file away. See usetheokit/theokit-ui#51.
   });
 });
