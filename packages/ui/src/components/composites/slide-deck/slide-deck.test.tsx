@@ -314,3 +314,163 @@ describe("<SlideDeck>", () => {
     );
   });
 });
+
+/**
+ * B-271 — the two slots the framework injects into.
+ *
+ * The item asked that markdown `![]()` render through the framework's `Image` and `[]()` through its
+ * `Link`. Importing either is impossible and always was: `@theokit/ui` names no `theokit` dependency
+ * in any of its four manifest fields, and the graph runs `theokit -> @theokit/ui`, so an import
+ * would invert it. The remedy a component library has is a seam the consumer fills, and B-286
+ * finished it — `SlideDeck`, the composite a production consumer actually reaches, now declares
+ * `components` and relays it to all five internal `<Slide>` render sites.
+ *
+ * ## Why these cases exist when B-286 already proved the relay
+ *
+ * B-286 proved it with `h1`, which has no entry in `slideMarkdownComponents`. `img` and `a` are the
+ * only two keys that DO, and they are the two the framework supplies in B-279. So an `h1` case
+ * cannot observe the thing that matters here: that a consumer's component displaces this package's
+ * own default rather than being shadowed by it. A later change to those defaults, or to the relay,
+ * must not quietly close the slots the framework is about to depend on.
+ *
+ * ## The expected values below were measured, not predicted
+ *
+ * Through a real deck render supplying no `components`: `loading="lazy"`, `decoding="async"` and
+ * `alt=""` on the image, `rel="noopener noreferrer"` on an external anchor. `markdown-components.
+ * test.ts` asserts the same defaults by calling the renderers directly, which cannot see whether the
+ * composite relays them; that is what these cases add.
+ *
+ * ## What is deliberately NOT asserted
+ *
+ * A count of rendered elements. The chrome mounts as many `<Slide>`s as its layout needs, so a count
+ * states a fact about the layout rather than about the relay — B-286 records the same reasoning for
+ * the same suite. Every site is asserted present first, and zero UNMARKED elements is then the
+ * whole-seam claim, which cannot pass vacuously on an empty DOM.
+ */
+
+/** Two slides, each carrying both slots. Two is the size B-286 measured: `presenter-view` mounts the
+ * next preview only when a next slide exists, and `thumbnails` keeps every thumbnail eager at ≤ 3. */
+const slotsMd =
+  "![](a.png)\n\n[x](https://elsewhere.test)\n\n---\n\n![](b.png)\n\n[y](https://elsewhere.test)";
+
+/** Substitutes standing in for the framework's `Image` and `Link`. They assert nothing about those
+ * components — only that whatever a consumer supplies for these keys is what renders. */
+const MarkImage = (props: Record<string, unknown>) => (
+  <img data-mark="image" src={String(props.src ?? "")} alt="" />
+);
+const MarkLink = ({ children }: { children?: ReactNode }) => (
+  <a data-mark="link" href="#injected">
+    {children}
+  </a>
+);
+
+const VIEW = '[data-slot="slides-view"]';
+
+describe("<SlideDeck> markdown slots the framework fills (B-271)", () => {
+  it("the image slot accepts a consumer component through the deck", async () => {
+    const { container } = render(
+      <SlideDeck slides={slotsMd} components={{ img: MarkImage }} enableHashRouting={false} />,
+    );
+    await waitFor(() => {
+      expect(container.querySelector(`${VIEW} img`)).toBeTruthy();
+    });
+    expect(
+      container.querySelector(`${VIEW} img[data-mark="image"]`),
+      "a consumer's image component did not reach the deck's markdown, so the framework cannot " +
+        "supply its own Image and the only remaining route would be an import that inverts the graph",
+    ).toBeTruthy();
+  });
+
+  it("the anchor slot accepts a consumer component through the deck", async () => {
+    const { container } = render(
+      <SlideDeck slides={slotsMd} components={{ a: MarkLink }} enableHashRouting={false} />,
+    );
+    await waitFor(() => {
+      expect(container.querySelector(`${VIEW} a`)).toBeTruthy();
+    });
+    expect(
+      container.querySelector(`${VIEW} a[data-mark="link"]`),
+      "a consumer's anchor component did not reach the deck's markdown, so the framework cannot " +
+        "supply its own Link",
+    ).toBeTruthy();
+  });
+
+  it("both slots reach every internal <Slide>", async () => {
+    const { container } = render(
+      <SlideDeck
+        slides={slotsMd}
+        components={{ img: MarkImage, a: MarkLink }}
+        enableHashRouting={false}
+      >
+        <SlideDeck.Slides />
+        <SlideDeck.Thumbnails />
+        <SlideDeck.PresenterView />
+      </SlideDeck>,
+    );
+    // The presenter panel mounts only after TOGGLE_PRESENTER: `use-deck-state.ts` starts
+    // `presenterMode: false` and `presenter-view.tsx` returns null until it flips. Rendering the
+    // panel directly would fail against a correct implementation.
+    fireEvent.keyDown(document, { key: "n" });
+    await waitFor(() => {
+      expect(container.querySelector(`${VIEW} img`)).toBeTruthy();
+      expect(container.querySelector('[data-slot="thumbnail-item"] img')).toBeTruthy();
+      expect(container.querySelector('[data-slot="print-container"] img')).toBeTruthy();
+      expect(
+        container.querySelector('section[aria-label="Current slide preview"] img'),
+      ).toBeTruthy();
+      expect(container.querySelector('section[aria-label="Next slide preview"] img')).toBeTruthy();
+    });
+    expect(
+      container.querySelectorAll("img:not([data-mark])").length,
+      "a render site still renders this package's own image renderer, so a framework-supplied " +
+        "Image would apply to some slides and not others",
+    ).toBe(0);
+    expect(
+      container.querySelectorAll("a:not([data-mark])").length,
+      "a render site still renders this package's own anchor renderer",
+    ).toBe(0);
+  });
+
+  it("supplying neither slot keeps this package's defaults", async () => {
+    // The "behaves exactly as it does today" half of the item. `@theokit/plugin-canvas` renders
+    // <SlideDeck> supplying no components and depends on these staying in force.
+    const { container } = render(<SlideDeck slides={slotsMd} enableHashRouting={false} />);
+    await waitFor(() => {
+      expect(container.querySelector(`${VIEW} img`)).toBeTruthy();
+    });
+    const img = container.querySelector(`${VIEW} img`);
+    expect(img?.getAttribute("loading"), "markdown images load eagerly").toBe("lazy");
+    expect(img?.getAttribute("decoding"), "markdown images decode synchronously").toBe("async");
+    expect(img?.getAttribute("alt"), "an image with no alt has its URL read aloud").toBe("");
+    const anchor = container.querySelector(`${VIEW} a`);
+    expect(
+      anchor?.getAttribute("rel"),
+      "an external markdown anchor carries no rel. The sanitize schema strips `target`, so this is " +
+        'defence in depth — but a plugin declaring `a: ["target"]` reopens the door.',
+    ).toBe("noopener noreferrer");
+  });
+
+  it("supplying one slot replaces the whole map, so the other loses its defaults", async () => {
+    // Measured, and pinned because it is the consequence this item spent ten rounds arguing about.
+    // `slide.tsx` assigns `components = slideMarkdownComponents` as a default PARAMETER, and a
+    // default parameter fires on `undefined` alone — so a partial map reaches `toJsxRuntime` whole
+    // and the keys the consumer omitted have no renderer at all.
+    //
+    // This pins TODAY's published behaviour; it does not settle whether it is right. The guard in
+    // `markdown-components.test.ts` now permits a floor merge (`{...defaults, ...consumer}`) and
+    // forbids only the ceiling, so the merge is available. Taking it would change what a published
+    // version does for consumers passing a partial map, which needs an ADR naming who is affected —
+    // and this case is what makes that change impossible to land silently.
+    const { container } = render(
+      <SlideDeck slides={slotsMd} components={{ a: MarkLink }} enableHashRouting={false} />,
+    );
+    await waitFor(() => {
+      expect(container.querySelector(`${VIEW} a[data-mark="link"]`)).toBeTruthy();
+    });
+    expect(
+      container.querySelector(`${VIEW} img`)?.getAttribute("loading"),
+      "a partial components map kept this package's image defaults. That is a behaviour change for " +
+        "every published consumer passing one — intended or not, it may not arrive unannounced.",
+    ).toBeNull();
+  });
+});
