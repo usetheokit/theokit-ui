@@ -142,14 +142,14 @@ describe("the default map reaches Slide (#154)", () => {
     // The shape the guard exists to forbid: defaults last, so they override the consumer.
     expect(
       defaultIsAFloorNotACeiling(
-        base + " const merged = { ...components, ...slideMarkdownComponents };",
+        `${base} const merged = { ...components, ...slideMarkdownComponents };`,
       ),
       "the guard accepts the ceiling it was written to forbid",
     ).toBe(false);
     // The shape the guard's own message asks for: consumer last, defaults survive as a fallback.
     expect(
       defaultIsAFloorNotACeiling(
-        base + " const merged = { ...slideMarkdownComponents, ...components };",
+        `${base} const merged = { ...slideMarkdownComponents, ...components };`,
       ),
       "the guard rejects the fallback shape its own message asks for",
     ).toBe(true);
