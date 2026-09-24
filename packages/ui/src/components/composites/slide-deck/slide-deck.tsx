@@ -29,7 +29,7 @@ import {
  * `initFromHash` (D17) to avoid hydration mismatch. Reducer clamps
  * `currentIndex` whenever `slides.length` changes (EC-4 reconciliation).
  */
-import { Slide, type SlidePlugin } from "../../primitives/slide/index.js";
+import { Slide, type SlidePlugin, type SlideProps } from "../../primitives/slide/index.js";
 import { DeckContext, type DeckContextValue, useDeckContext } from "./context.js";
 import { Controls } from "./controls.js";
 import { countFragmentsInMarkdown } from "./fragments.js";
@@ -76,6 +76,16 @@ export interface SlideDeckProps {
    * Pass MEMOIZED arrays to avoid re-parses on every render.
    */
   plugins?: SlidePlugin[];
+  /**
+   * Markdown component overrides relayed to every inner `<Slide>` (B-286).
+   *
+   * The primitive treats this map as a REPLACEMENT and never as a merge, so a consumer supplying
+   * `{ a: MyLink }` also gives up this package's own `img` renderer and the `loading="lazy"`,
+   * `decoding="async"` and `alt` normalisation it applies. Supplying nothing keeps all of them.
+   *
+   * Pass MEMOIZED maps to avoid re-parses on every render.
+   */
+  components?: SlideProps["components"];
 }
 
 function generateDeckId(): string {
@@ -98,6 +108,7 @@ const SlideDeckBase: FC<SlideDeckProps> = ({
   className,
   "aria-label": ariaLabel = "Slide deck",
   plugins,
+  components,
 }) => {
   const generatedId = useId();
   const deckId = deckIdProp ?? generatedId ?? generateDeckId();
@@ -210,10 +221,21 @@ const SlideDeckBase: FC<SlideDeckProps> = ({
       transition,
       deckId,
       plugins,
+      components,
       toggleFullscreen: fullscreen.toggle,
       print: onPrint,
     }),
-    [state, dispatch, parsedSlides, transition, deckId, plugins, fullscreen.toggle, onPrint],
+    [
+      state,
+      dispatch,
+      parsedSlides,
+      transition,
+      deckId,
+      plugins,
+      components,
+      fullscreen.toggle,
+      onPrint,
+    ],
   );
 
   return (
@@ -258,7 +280,7 @@ const SlideDeckBase: FC<SlideDeckProps> = ({
 };
 
 const SlidesView: FC<{ className?: string }> = ({ className }) => {
-  const { state, slides, transition, plugins } = useDeckContext();
+  const { state, slides, transition, plugins, components } = useDeckContext();
   const current = slides[state.currentIndex];
   return (
     <div
@@ -283,6 +305,7 @@ const SlidesView: FC<{ className?: string }> = ({ className }) => {
           <Slide
             markdown={current.markdown}
             plugins={plugins}
+            components={components}
             aria-label={`Slide ${state.currentIndex + 1}`}
           />
         </div>

@@ -1,10 +1,31 @@
 import { fireEvent, render, waitFor } from "@testing-library/react";
+import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import type { SlidePlugin } from "../../primitives/slide/index.js";
 import type { SlideDeckSlide } from "./schema.js";
 import { SlideDeck } from "./slide-deck.js";
 
 const sampleMd = "# Slide A\n\n---\n\n# Slide B\n\n---\n\n# Slide C";
+
+/**
+ * Fixture for the `components` relay cases, sized once for every render site.
+ *
+ * TWO slides, not one and not four: `presenter-view.tsx` mounts the next preview only when a next
+ * slide exists, so a 1-slide deck leaves that render site unmounted; `thumbnails.tsx` passes
+ * `eager={eagerAll || index < 3}`, so a deck of at most 3 keeps every thumbnail eager and removes
+ * the `IntersectionObserver` dependency. Two satisfies both bounds at once.
+ */
+const relayMd = "# one\n\n---\n\n# two";
+
+/** Overrides `h1`, which `relayMd` emits, so an assertion can observe what it claims to. */
+const MarkH1 = ({ children }: { children?: ReactNode }) => <h1 data-mark="x">{children}</h1>;
+
+/**
+ * A markdown image is the probe for the DEFAULTS: `slideMarkdownComponents` is what adds
+ * `loading="lazy"` to one. A consumer supplying nothing keeps it; a consumer supplying `{}`
+ * replaces the whole map and therefore loses it.
+ */
+const imageMd = "![](x.png)";
 
 describe("<SlideDeck>", () => {
   it("renders the deck region with aria-roledescription", () => {
@@ -174,5 +195,73 @@ describe("<SlideDeck>", () => {
     });
     expect(calls.length).toBeGreaterThan(0);
     expect(container.querySelector("h1")).toBeFalsy();
+  });
+
+  it("a supplied component reaches the deck renderer", async () => {
+    const { container } = render(
+      <SlideDeck slides={relayMd} components={{ h1: MarkH1 }} enableHashRouting={false} />,
+    );
+    await waitFor(() => {
+      expect(container.querySelector('[data-slot="slides-view"] h1[data-mark]')).toBeTruthy();
+    });
+  });
+
+  it("a supplied component reaches the presenter-current renderer", async () => {
+    const { container } = render(
+      <SlideDeck slides={relayMd} components={{ h1: MarkH1 }} enableHashRouting={false} />,
+    );
+    await waitFor(() => {
+      expect(container.querySelector('[data-slot="slides-view"] h1')).toBeTruthy();
+    });
+    // `presenterMode` starts false and the panel returns null, so the public route that opens it
+    // is the documented hotkey (use-deck-keyboard.ts: n/N/p/P -> TOGGLE_PRESENTER).
+    fireEvent.keyDown(document, { key: "n" });
+    await waitFor(() => {
+      expect(
+        container.querySelector('section[aria-label="Current slide preview"] h1[data-mark]'),
+      ).toBeTruthy();
+    });
+  });
+
+  it("a supplied component reaches the presenter-next renderer", async () => {
+    const { container } = render(
+      <SlideDeck slides={relayMd} components={{ h1: MarkH1 }} enableHashRouting={false} />,
+    );
+    await waitFor(() => {
+      expect(container.querySelector('[data-slot="slides-view"] h1')).toBeTruthy();
+    });
+    fireEvent.keyDown(document, { key: "n" });
+    await waitFor(() => {
+      expect(
+        container.querySelector('section[aria-label="Next slide preview"] h1[data-mark]'),
+      ).toBeTruthy();
+    });
+  });
+
+  it("deck with an empty components map replaces the defaults", async () => {
+    // EC-3: `{}` is a supplied override to nothing, not an absent override. The primitive
+    // defaults the parameter, and a default parameter fires on `undefined` only — so `{}` reaches
+    // `toJsxRuntime` and the package's own renderers are gone, `loading="lazy"` with them.
+    const { container } = render(
+      <SlideDeck slides={imageMd} components={{}} enableHashRouting={false} />,
+    );
+    await waitFor(() => {
+      expect(container.querySelector('[data-slot="slides-view"] img')).toBeTruthy();
+    });
+    expect(
+      container.querySelector('[data-slot="slides-view"] img')?.getAttribute("loading"),
+    ).toBeNull();
+  });
+
+  it("deck with no components keeps the package defaults", async () => {
+    // FR-003 must-not-regress: green before this change and after it. `@theokit/plugin-canvas`
+    // renders <SlideDeck> supplying no components, and depends on these defaults staying in force.
+    const { container } = render(<SlideDeck slides={imageMd} enableHashRouting={false} />);
+    await waitFor(() => {
+      expect(container.querySelector('[data-slot="slides-view"] img')).toBeTruthy();
+    });
+    expect(container.querySelector('[data-slot="slides-view"] img')?.getAttribute("loading")).toBe(
+      "lazy",
+    );
   });
 });

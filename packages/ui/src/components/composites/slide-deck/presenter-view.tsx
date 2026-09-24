@@ -28,7 +28,7 @@ function formatElapsed(ms: number): string {
 }
 
 export const PresenterView: FC<PresenterViewProps> = ({ className }) => {
-  const { state, slides, plugins } = useDeckContext();
+  const { state, slides, plugins, components } = useDeckContext();
   const startedAt = useRef<number | null>(null);
   const [elapsed, setElapsed] = useState(0);
 
@@ -98,7 +98,12 @@ export const PresenterView: FC<PresenterViewProps> = ({ className }) => {
           }}
         >
           {current ? (
-            <Slide markdown={current.markdown} plugins={plugins} aria-label="Current slide" />
+            <Slide
+              markdown={current.markdown}
+              plugins={plugins}
+              components={components}
+              aria-label="Current slide"
+            />
           ) : null}
         </div>
       </section>
@@ -114,7 +119,12 @@ export const PresenterView: FC<PresenterViewProps> = ({ className }) => {
           }}
         >
           {next ? (
-            <Slide markdown={next.markdown} plugins={plugins} aria-label="Next slide" />
+            <Slide
+              markdown={next.markdown}
+              plugins={plugins}
+              components={components}
+              aria-label="Next slide"
+            />
           ) : (
             <div style={{ padding: 16, fontSize: 14, opacity: 0.6 }}>End of deck</div>
           )}
