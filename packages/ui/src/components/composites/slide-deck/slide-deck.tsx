@@ -273,7 +273,7 @@ const SlideDeckBase: FC<SlideDeckProps> = ({
         </div>
         {children ?? <DefaultDeckLayout />}
         {/* Hidden print container — visible only during @media print. */}
-        <PrintContainer slides={parsedSlides} plugins={plugins} />
+        <PrintContainer slides={parsedSlides} plugins={plugins} components={components} />
       </div>
     </DeckContext.Provider>
   );
@@ -374,10 +374,12 @@ const PrintButton: FC<{ className?: string }> = ({ className }) => {
   );
 };
 
-const PrintContainer: FC<{ slides: SlideDeckSlide[]; plugins?: SlidePlugin[] }> = ({
-  slides,
-  plugins,
-}) => {
+const PrintContainer: FC<{
+  slides: SlideDeckSlide[];
+  plugins?: SlidePlugin[];
+  /** Drilled rather than read from the context: this component never calls `useDeckContext()`. */
+  components?: SlideProps["components"];
+}> = ({ slides, plugins, components }) => {
   return (
     <div
       data-slot="print-container"
@@ -399,6 +401,7 @@ const PrintContainer: FC<{ slides: SlideDeckSlide[]; plugins?: SlidePlugin[] }> 
           <Slide
             markdown={slide.markdown}
             plugins={plugins}
+            components={components}
             aria-label={`Print slide ${index + 1}`}
           />
         </div>

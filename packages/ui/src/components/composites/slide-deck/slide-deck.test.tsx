@@ -253,6 +253,55 @@ describe("<SlideDeck>", () => {
     ).toBeNull();
   });
 
+  it("a supplied component reaches the print renderer", async () => {
+    // `PrintContainer` mounts unconditionally and is hidden with `visibility: hidden` rather than
+    // being print-only dead code, so its render site is observable with no print-media emulation.
+    const { container } = render(
+      <SlideDeck slides={relayMd} components={{ h1: MarkH1 }} enableHashRouting={false} />,
+    );
+    await waitFor(() => {
+      expect(container.querySelector('[data-slot="print-container"] h1[data-mark]')).toBeTruthy();
+    });
+  });
+
+  it("a supplied component reaches the thumbnail renderer", async () => {
+    const { container } = render(
+      <SlideDeck slides={relayMd} components={{ h1: MarkH1 }} enableHashRouting={false}>
+        <SlideDeck.Thumbnails />
+      </SlideDeck>,
+    );
+    await waitFor(() => {
+      expect(container.querySelector('[data-slot="thumbnail-item"] h1[data-mark]')).toBeTruthy();
+    });
+  });
+
+  it("components prop relayed to every internal <Slide>", async () => {
+    // The composite's five render sites, mounted at once: the deck view, both presenter previews,
+    // every thumbnail, and the print container. "Every internal" is asserted as the ABSENCE of an
+    // unmarked heading rather than as a count — a count would predict how many <Slide>s the chrome
+    // mounts, which is a fact about the layout rather than about the relay.
+    const { container } = render(
+      <SlideDeck slides={relayMd} components={{ h1: MarkH1 }} enableHashRouting={false}>
+        <SlideDeck.Slides />
+        <SlideDeck.Thumbnails />
+        <SlideDeck.PresenterView />
+      </SlideDeck>,
+    );
+    fireEvent.keyDown(document, { key: "n" });
+    await waitFor(() => {
+      // Every site is mounted before the claim is made, so an unmounted renderer cannot be
+      // mistaken for a relayed one.
+      expect(container.querySelector('[data-slot="slides-view"] h1')).toBeTruthy();
+      expect(container.querySelector('[data-slot="thumbnail-item"] h1')).toBeTruthy();
+      expect(container.querySelector('[data-slot="print-container"] h1')).toBeTruthy();
+      expect(
+        container.querySelector('section[aria-label="Current slide preview"] h1'),
+      ).toBeTruthy();
+      expect(container.querySelector('section[aria-label="Next slide preview"] h1')).toBeTruthy();
+    });
+    expect(container.querySelectorAll("h1:not([data-mark])").length).toBe(0);
+  });
+
   it("deck with no components keeps the package defaults", async () => {
     // FR-003 must-not-regress: green before this change and after it. `@theokit/plugin-canvas`
     // renders <SlideDeck> supplying no components, and depends on these defaults staying in force.
