@@ -29,9 +29,10 @@ import {
  * `initFromHash` (D17) to avoid hydration mismatch. Reducer clamps
  * `currentIndex` whenever `slides.length` changes (EC-4 reconciliation).
  */
-import { Slide, type SlidePlugin } from "../../primitives/slide/index.js";
+import { Slide, type SlidePlugin, type SlideProps } from "../../primitives/slide/index.js";
 import { DeckContext, type DeckContextValue, useDeckContext } from "./context.js";
 import { Controls } from "./controls.js";
+import { DeckSlide } from "./deck-slide.js";
 import { countFragmentsInMarkdown } from "./fragments.js";
 import { PresenterView } from "./presenter-view.js";
 import { printDeck } from "./print-styles.js";
@@ -76,6 +77,16 @@ export interface SlideDeckProps {
    * Pass MEMOIZED arrays to avoid re-parses on every render.
    */
   plugins?: SlidePlugin[];
+  /**
+   * Markdown component overrides relayed to every inner `<Slide>` (B-286).
+   *
+   * The primitive treats this map as a REPLACEMENT and never as a merge, so a consumer supplying
+   * `{ a: MyLink }` also gives up this package's own `img` renderer and the `loading="lazy"`,
+   * `decoding="async"` and `alt` normalisation it applies. Supplying nothing keeps all of them.
+   *
+   * Pass MEMOIZED maps to avoid re-parses on every render.
+   */
+  components?: SlideProps["components"];
 }
 
 function generateDeckId(): string {
@@ -98,6 +109,7 @@ const SlideDeckBase: FC<SlideDeckProps> = ({
   className,
   "aria-label": ariaLabel = "Slide deck",
   plugins,
+  components,
 }) => {
   const generatedId = useId();
   const deckId = deckIdProp ?? generatedId ?? generateDeckId();
@@ -210,10 +222,21 @@ const SlideDeckBase: FC<SlideDeckProps> = ({
       transition,
       deckId,
       plugins,
+      components,
       toggleFullscreen: fullscreen.toggle,
       print: onPrint,
     }),
-    [state, dispatch, parsedSlides, transition, deckId, plugins, fullscreen.toggle, onPrint],
+    [
+      state,
+      dispatch,
+      parsedSlides,
+      transition,
+      deckId,
+      plugins,
+      components,
+      fullscreen.toggle,
+      onPrint,
+    ],
   );
 
   return (
@@ -251,14 +274,14 @@ const SlideDeckBase: FC<SlideDeckProps> = ({
         </div>
         {children ?? <DefaultDeckLayout />}
         {/* Hidden print container — visible only during @media print. */}
-        <PrintContainer slides={parsedSlides} plugins={plugins} />
+        <PrintContainer slides={parsedSlides} plugins={plugins} components={components} />
       </div>
     </DeckContext.Provider>
   );
 };
 
 const SlidesView: FC<{ className?: string }> = ({ className }) => {
-  const { state, slides, transition, plugins } = useDeckContext();
+  const { state, slides, transition } = useDeckContext();
   const current = slides[state.currentIndex];
   return (
     <div
@@ -280,11 +303,7 @@ const SlidesView: FC<{ className?: string }> = ({ className }) => {
           data-theo-slide-deck-slide-state="incoming"
           style={{ position: "absolute", inset: 0 }}
         >
-          <Slide
-            markdown={current.markdown}
-            plugins={plugins}
-            aria-label={`Slide ${state.currentIndex + 1}`}
-          />
+          <DeckSlide markdown={current.markdown} aria-label={`Slide ${state.currentIndex + 1}`} />
         </div>
       ) : (
         <div
@@ -351,10 +370,12 @@ const PrintButton: FC<{ className?: string }> = ({ className }) => {
   );
 };
 
-const PrintContainer: FC<{ slides: SlideDeckSlide[]; plugins?: SlidePlugin[] }> = ({
-  slides,
-  plugins,
-}) => {
+const PrintContainer: FC<{
+  slides: SlideDeckSlide[];
+  plugins?: SlidePlugin[];
+  /** Drilled rather than read from the context: this component never calls `useDeckContext()`. */
+  components?: SlideProps["components"];
+}> = ({ slides, plugins, components }) => {
   return (
     <div
       data-slot="print-container"
@@ -376,6 +397,7 @@ const PrintContainer: FC<{ slides: SlideDeckSlide[]; plugins?: SlidePlugin[] }> 
           <Slide
             markdown={slide.markdown}
             plugins={plugins}
+            components={components}
             aria-label={`Print slide ${index + 1}`}
           />
         </div>

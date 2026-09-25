@@ -1,6 +1,7 @@
-import { fireEvent, render } from "@testing-library/react";
+import { fireEvent, render, waitFor } from "@testing-library/react";
 import { type Dispatch, useReducer } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { SlidePlugin } from "../../primitives/slide/index.js";
 import { DeckContext, type DeckContextValue } from "./context.js";
 import type { SlideDeckSlide } from "./schema.js";
 import { Thumbnails } from "./thumbnails.js";
@@ -9,9 +10,10 @@ import { type DeckAction, type DeckState, deckReducer } from "./use-deck-state.j
 interface HarnessProps {
   slides: SlideDeckSlide[];
   initial?: Partial<DeckState>;
+  plugins?: SlidePlugin[];
 }
 
-function Harness({ slides, initial = {} }: HarnessProps) {
+function Harness({ slides, initial = {}, plugins }: HarnessProps) {
   const [state, dispatch] = useReducer(deckReducer, {
     currentIndex: 0,
     currentFragment: 0,
@@ -28,6 +30,7 @@ function Harness({ slides, initial = {} }: HarnessProps) {
     slides,
     transition: "fade",
     deckId: "test",
+    plugins,
     toggleFullscreen: () => undefined,
     print: () => undefined,
   };
@@ -125,5 +128,28 @@ describe("<Thumbnails>", () => {
   it("empty slides renders empty list (no crash)", () => {
     const { container } = render(<Harness slides={[]} initial={{ totalSlides: 0 }} />);
     expect(container.querySelectorAll("[data-theo-slide-deck-thumbnail]").length).toBe(0);
+  });
+
+  it("relays context plugins to the inner <Slide> (B-288)", async () => {
+    // Without the relay a thumbnail of a plugin-rendered slide shows raw source
+    // instead of the rendered form, so the silhouette a thumbnail exists to be
+    // recognised by is the wrong one. Probe: a plugin that renames h1 -> h2.
+    const plugin: SlidePlugin = {
+      name: "rename-h1-to-h2",
+      mdastTransform: (tree) => {
+        for (const node of tree.children) {
+          if (node.type === "heading" && node.depth === 1) {
+            node.depth = 2 as 1 | 2 | 3 | 4 | 5 | 6;
+          }
+        }
+        return tree;
+      },
+    };
+    const slides: SlideDeckSlide[] = [{ markdown: "# thumb" }];
+    const { container } = render(<Harness slides={slides} plugins={[plugin]} />);
+    await waitFor(() => {
+      expect(container.querySelector("[data-theo-slide-deck-thumbnail] h2")).toBeTruthy();
+    });
+    expect(container.querySelector("[data-theo-slide-deck-thumbnail] h1")).toBeFalsy();
   });
 });

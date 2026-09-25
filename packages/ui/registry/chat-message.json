@@ -103,6 +103,11 @@
       "path": "lib/markdown/mermaid.tsx",
       "type": "registry:lib",
       "target": "lib/markdown/mermaid.tsx"
+    },
+    {
+      "path": "components/primitives/slide/markdown-components.tsx",
+      "type": "registry:lib",
+      "target": "lib/markdown/element-defaults.tsx"
     }
   ]
 }
