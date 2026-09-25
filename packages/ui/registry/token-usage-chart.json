@@ -11,6 +11,11 @@
   ],
   "files": [
     {
+      "path": "components/primitives/token-usage-chart/usage-metrics.ts",
+      "type": "registry:lib",
+      "target": "components/primitives/token-usage-chart/usage-metrics.ts"
+    },
+    {
       "path": "components/primitives/token-usage-chart/token-usage-chart.tsx",
       "type": "registry:ui",
       "target": "components/ui/token-usage-chart.tsx"
