@@ -206,7 +206,15 @@ describe("<SlideDeck>", () => {
     });
   });
 
-  it("a supplied component reaches the presenter-current renderer", async () => {
+  /**
+   * The two presenter panes differ by one `aria-label` and nothing else.
+   *
+   * Written out twice they were 22 identical lines, which SonarCloud measured as the whole of this
+   * PR's duplication on new code. `it.each` would collapse them further and appears nowhere else in
+   * this package, so a named helper keeps both `it(` calls greppable and introduces no convention
+   * this repository does not already use.
+   */
+  async function aSuppliedComponentReachesThePresenterPane(label: string): Promise<void> {
     const { container } = render(
       <SlideDeck slides={relayMd} components={{ h1: MarkH1 }} enableHashRouting={false} />,
     );
@@ -217,25 +225,16 @@ describe("<SlideDeck>", () => {
     // is the documented hotkey (use-deck-keyboard.ts: n/N/p/P -> TOGGLE_PRESENTER).
     fireEvent.keyDown(document, { key: "n" });
     await waitFor(() => {
-      expect(
-        container.querySelector('section[aria-label="Current slide preview"] h1[data-mark]'),
-      ).toBeTruthy();
+      expect(container.querySelector(`section[aria-label="${label}"] h1[data-mark]`)).toBeTruthy();
     });
+  }
+
+  it("a supplied component reaches the presenter-current renderer", async () => {
+    await aSuppliedComponentReachesThePresenterPane("Current slide preview");
   });
 
   it("a supplied component reaches the presenter-next renderer", async () => {
-    const { container } = render(
-      <SlideDeck slides={relayMd} components={{ h1: MarkH1 }} enableHashRouting={false} />,
-    );
-    await waitFor(() => {
-      expect(container.querySelector('[data-slot="slides-view"] h1')).toBeTruthy();
-    });
-    fireEvent.keyDown(document, { key: "n" });
-    await waitFor(() => {
-      expect(
-        container.querySelector('section[aria-label="Next slide preview"] h1[data-mark]'),
-      ).toBeTruthy();
-    });
+    await aSuppliedComponentReachesThePresenterPane("Next slide preview");
   });
 
   it("deck with an empty components map replaces the defaults", async () => {
