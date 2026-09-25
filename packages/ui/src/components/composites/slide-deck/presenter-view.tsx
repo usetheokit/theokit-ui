@@ -11,8 +11,8 @@
  * Toggling presenter mode is dispatched via hotkey (n/N/p/P, see useDeckKeyboard).
  */
 import { type FC, useEffect, useRef, useState } from "react";
-import { Slide } from "../../primitives/slide/index.js";
 import { useDeckContext } from "./context.js";
+import { DeckSlide } from "./deck-slide.js";
 
 export interface PresenterViewProps {
   className?: string;
@@ -97,7 +97,7 @@ export const PresenterView: FC<PresenterViewProps> = ({ className }) => {
             borderRadius: 6,
           }}
         >
-          {current ? <Slide markdown={current.markdown} aria-label="Current slide" /> : null}
+          {current ? <DeckSlide markdown={current.markdown} aria-label="Current slide" /> : null}
         </div>
       </section>
       <section aria-label="Next slide preview">
@@ -112,7 +112,7 @@ export const PresenterView: FC<PresenterViewProps> = ({ className }) => {
           }}
         >
           {next ? (
-            <Slide markdown={next.markdown} aria-label="Next slide" />
+            <DeckSlide markdown={next.markdown} aria-label="Next slide" />
           ) : (
             <div style={{ padding: 16, fontSize: 14, opacity: 0.6 }}>End of deck</div>
           )}

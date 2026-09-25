@@ -23,6 +23,11 @@
       "target": "components/blocks/slide-deck/context.tsx"
     },
     {
+      "path": "components/composites/slide-deck/deck-slide.tsx",
+      "type": "registry:block",
+      "target": "components/blocks/slide-deck/deck-slide.tsx"
+    },
+    {
       "path": "components/composites/slide-deck/controls.tsx",
       "type": "registry:block",
       "target": "components/blocks/slide-deck/controls.tsx"

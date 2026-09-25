@@ -8,7 +8,9 @@
  * doesn't re-parse the entire conversation history per token.
  *
  * Internally swaps the default `<code>` element for `<CodeBlock>` (fenced)
- * or `<InlineCode>` (inline), per shadcn.io's AI code-block pattern.
+ * or `<InlineCode>` (inline), per shadcn.io's AI code-block pattern, on top of
+ * this package's own `a`/`img` defaults — see `MARKDOWN_COMPONENTS` below for
+ * why they are spread here rather than merged inside the parser.
  *
  * Component override pattern is forked from `vercel/ai-elements`
  * `<MessageResponse>` (Apache-2.0, see NOTICE).
@@ -19,6 +21,7 @@ import { cn } from "../../../lib/cn.js";
 import { CodeBlock } from "../../../lib/markdown/code-block.js";
 import { InlineCode } from "../../../lib/markdown/inline-code.js";
 import { parseMarkdownToReactSafe } from "../../../lib/markdown/parser.js";
+import { slideMarkdownComponents } from "../../primitives/slide/markdown-components.js";
 
 export interface ChatMessageResponseProps {
   /** Raw markdown text from the model. */
@@ -73,6 +76,28 @@ function extractText(children: ReactNode): string {
 }
 
 const MARKDOWN_COMPONENTS: Record<string, unknown> = {
+  // The package's element defaults FIRST, this surface's overrides after, so a key spelled here
+  // wins. `slideMarkdownComponents` supplies `a` and `img`; `code`/`pre` below are the chat's own.
+  //
+  // ## Why the defaults are spread here and not merged inside `parser.ts`
+  //
+  // Both were measured before choosing. Merging in the parser resolves the class for every caller,
+  // and the class has exactly ONE member: `parseMarkdownToReactSafe` is reachable from no published
+  // subpath (106 explicit entries, no wildcard, none targeting `lib/markdown`) and this file is its
+  // only caller in the tree — the slide runs its own `primitives/slide/parse.ts`. So the generality
+  // buys nothing today, and it costs: a probe of that shape turned `parser.test.ts > renders links`
+  // red, because that case asserts the parser's output for a caller passing NO map at all. Changing
+  // what the parser does with an absent map is a wider change than this item measured, and it would
+  // give the package a third answer to merge-vs-replace next to `slide.tsx`'s deliberate replace.
+  //
+  // Spreading here changes only the surface the item is about and leaves the parser's contract as
+  // it is. If a second caller of the parser ever appears, that is when merging earns its ADR.
+  //
+  // The map is named for the slide because that is where it was written, not because its content is
+  // slide-specific: it sets `loading`/`decoding` on an image and `rel` on an external anchor, which
+  // every markdown surface in this package wants. Reused rather than copied — a second definition
+  // would be two places to fix the next time a default changes.
+  ...slideMarkdownComponents,
   code: (props: Record<string, unknown> & { children?: ReactNode }) => {
     if (isFenced(props)) {
       const language = extractLanguage(props);

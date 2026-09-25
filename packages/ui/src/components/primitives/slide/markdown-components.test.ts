@@ -96,16 +96,62 @@ describe("the default map reaches Slide (#154)", () => {
     ).toBe(true);
   });
 
+  /**
+   * The default must not become a ceiling. A consumer passing `components` is making a decision, and a
+   * default that overrode it would be worse than none.
+   *
+   * ## The predicate is a named function now, and it is fed both shapes
+   *
+   * It was an inline regex asserting that `{...slideMarkdownComponents, ...components}` is ABSENT from
+   * `slide.tsx`. Measured by execution, in both orders:
+   *
+   * ```
+   * {...slideMarkdownComponents, ...components}  ->  { a: consumer_a, img: default_img }
+   * {...components, ...slideMarkdownComponents}  ->  { a: default_a }
+   * ```
+   *
+   * The first is the consumer winning with the default surviving for keys they did not override — which
+   * is verbatim what this test's own failure message asks for — and the old regex PROHIBITED it. The
+   * second is the default overriding the consumer, the ceiling the comment forbids, and the regex did
+   * not match it, so it was permitted. **The guard forbade the good shape and allowed the bad one**, and
+   * it passed only because `slide.tsx` does neither: it assigns the default wholesale, so a consumer
+   * overriding one entry loses the defaults for every other.
+   *
+   * A regex read by a human is checked by reading it, which is how this survived. A named predicate can
+   * be fed the shapes it is supposed to judge, which is what the two cases below do.
+   */
+  function defaultIsAFloorNotACeiling(source: string): boolean {
+    // The default must reach `parseSlide` at all …
+    if (!/components\s*=\s*slideMarkdownComponents/.test(source)) return false;
+    // … and where a merge exists, the CONSUMER's entries must come last so theirs win.
+    const ceiling = /\{\s*\.\.\.components\s*,\s*\.\.\.slideMarkdownComponents\s*\}/;
+    return !ceiling.test(source);
+  }
+
   it("test_a_consumer_map_still_wins", () => {
-    // The default must not become a ceiling. A consumer passing `components` is making a decision,
-    // and a default that overrode it would be worse than none.
     const here = dirname(fileURLToPath(import.meta.url));
     const source = readFileSync(join(here, "slide.tsx"), "utf8");
-
     expect(
-      /components\s*=\s*slideMarkdownComponents/.test(source) &&
-        !/\.\.\.slideMarkdownComponents\s*,\s*\.\.\.components/.test(source),
+      defaultIsAFloorNotACeiling(source),
       "the default is merged over the consumer's map instead of being a fallback for it",
+    ).toBe(true);
+  });
+
+  it("test_the_guard_rejects_a_ceiling_and_accepts_a_floor", () => {
+    const base = "const x = { components = slideMarkdownComponents };";
+    // The shape the guard exists to forbid: defaults last, so they override the consumer.
+    expect(
+      defaultIsAFloorNotACeiling(
+        `${base} const merged = { ...components, ...slideMarkdownComponents };`,
+      ),
+      "the guard accepts the ceiling it was written to forbid",
+    ).toBe(false);
+    // The shape the guard's own message asks for: consumer last, defaults survive as a fallback.
+    expect(
+      defaultIsAFloorNotACeiling(
+        `${base} const merged = { ...slideMarkdownComponents, ...components };`,
+      ),
+      "the guard rejects the fallback shape its own message asks for",
     ).toBe(true);
   });
 });

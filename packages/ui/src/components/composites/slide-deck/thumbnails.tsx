@@ -13,8 +13,8 @@
  * Click handler dispatches JUMP_TO. Auto-scroll keeps current thumbnail visible.
  */
 import { type FC, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Slide } from "../../primitives/slide/index.js";
 import { useDeckContext } from "./context.js";
+import { DeckSlide } from "./deck-slide.js";
 
 export interface ThumbnailsProps {
   className?: string;
@@ -109,7 +109,7 @@ const ThumbnailItem: FC<ThumbnailItemProps> = ({
         }}
       >
         {revealed ? (
-          <Slide markdown={markdown} aria-label={`Thumbnail ${index + 1}`} />
+          <DeckSlide markdown={markdown} aria-label={`Thumbnail ${index + 1}`} />
         ) : (
           <div
             data-theo-slide-deck-thumbnail-placeholder
