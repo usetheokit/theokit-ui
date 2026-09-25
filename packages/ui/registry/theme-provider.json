@@ -6,11 +6,15 @@
   "description": "Theme + dark mode provider with built-in Violet Forge, Classic Paper, and Aurora Terminal themes.",
   "dependencies": [
     "@radix-ui/react-dropdown-menu",
-    "lucide-react"
+    "clsx",
+    "lucide-react",
+    "tailwind-merge",
+    "valibot"
   ],
   "registryDependencies": [
     "cn",
     "env",
+    "safe-href",
     "tokens"
   ],
   "files": [
@@ -35,6 +39,21 @@
       "target": "themes/aurora-terminal.ts"
     },
     {
+      "path": "themes/color-value-pattern.ts",
+      "type": "registry:lib",
+      "target": "themes/color-value-pattern.ts"
+    },
+    {
+      "path": "themes/density.ts",
+      "type": "registry:lib",
+      "target": "themes/density.ts"
+    },
+    {
+      "path": "themes/schema.ts",
+      "type": "registry:lib",
+      "target": "themes/schema.ts"
+    },
+    {
       "path": "themes/theme-provider.tsx",
       "type": "registry:lib",
       "target": "themes/theme-provider.tsx"
@@ -45,9 +64,84 @@
       "target": "themes/theme-switcher.tsx"
     },
     {
+      "path": "themes/anthropic-style.ts",
+      "type": "registry:lib",
+      "target": "themes/anthropic-style.ts"
+    },
+    {
+      "path": "themes/color.ts",
+      "type": "registry:lib",
+      "target": "themes/color.ts"
+    },
+    {
+      "path": "themes/define.ts",
+      "type": "registry:lib",
+      "target": "themes/define.ts"
+    },
+    {
+      "path": "themes/derive.ts",
+      "type": "registry:lib",
+      "target": "themes/derive.ts"
+    },
+    {
+      "path": "themes/dracula.ts",
+      "type": "registry:lib",
+      "target": "themes/dracula.ts"
+    },
+    {
+      "path": "themes/falcon-red.ts",
+      "type": "registry:lib",
+      "target": "themes/falcon-red.ts"
+    },
+    {
+      "path": "themes/github-dark.ts",
+      "type": "registry:lib",
+      "target": "themes/github-dark.ts"
+    },
+    {
+      "path": "themes/linear-glass.ts",
+      "type": "registry:lib",
+      "target": "themes/linear-glass.ts"
+    },
+    {
+      "path": "themes/one-dark.ts",
+      "type": "registry:lib",
+      "target": "themes/one-dark.ts"
+    },
+    {
+      "path": "themes/openai-style.ts",
+      "type": "registry:lib",
+      "target": "themes/openai-style.ts"
+    },
+    {
+      "path": "themes/theme-editor.tsx",
+      "type": "registry:lib",
+      "target": "themes/theme-editor.tsx"
+    },
+    {
+      "path": "themes/theme-script.tsx",
+      "type": "registry:lib",
+      "target": "themes/theme-script.tsx"
+    },
+    {
+      "path": "themes/use-stored-theme.ts",
+      "type": "registry:lib",
+      "target": "themes/use-stored-theme.ts"
+    },
+    {
+      "path": "themes/vercel-mono.ts",
+      "type": "registry:lib",
+      "target": "themes/vercel-mono.ts"
+    },
+    {
       "path": "themes/index.ts",
       "type": "registry:lib",
       "target": "themes/index.ts"
+    },
+    {
+      "path": "themes/contrast.ts",
+      "type": "registry:lib",
+      "target": "themes/contrast.ts"
     }
   ]
 }

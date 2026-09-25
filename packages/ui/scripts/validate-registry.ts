@@ -2,7 +2,7 @@
 import { existsSync } from "node:fs";
 import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { dirname, join, posix, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -187,6 +187,23 @@ async function main(): Promise<void> {
     }
   }
 
+  // Which BUILT artifact ships which path. `targetToItemName` above answers the same shape of
+  // question from the DESCRIPTORS and keyed by `@/target`; this one is keyed by the path a built
+  // artifact actually carries, which is what a `./` import resolves to.
+  const shippedBy = new Map<string, string>();
+  for (const [name] of descriptors) {
+    const builtFile = join(OUT_DIR, `${name}.json`);
+    if (!existsSync(builtFile)) continue;
+    const item = await readJson<RegistryDescriptor>(builtFile);
+    for (const shipped of item.files ?? []) {
+      shippedBy.set(stripExtension(shipped.path), name);
+    }
+  }
+
+  // A registry dependency is spelled either as a bare item name or as a full URL to its JSON.
+  const dependencyItemName = (dependency: string): string =>
+    stripExtension(dependency.replace(/^.*\//, ""));
+
   function resolveDependencyName(specifier: string): string | undefined {
     const stripped = stripExtension(specifier);
     const direct = registryNameFromTarget(stripped);
@@ -209,6 +226,15 @@ async function main(): Promise<void> {
     }
 
     const built = await readJson<RegistryDescriptor>(builtPath);
+    // Every path this artifact actually SHIPS, without its extension. A `./` import is checked
+    // against this set below — see the comment at that check for why nothing did before.
+    const shippedStems = new Set<string>();
+    for (const shipped of built.files) {
+      const stem = stripExtension(shipped.path);
+      shippedStems.add(stem);
+      // `./x` may legitimately mean `x/index`, so a shipped index registers both spellings.
+      if (stem.endsWith("/index")) shippedStems.add(stem.slice(0, -"/index".length));
+    }
     const dependencySet = new Set(descriptor.registryDependencies ?? []);
     const declaredPackages = new Set(descriptor.dependencies ?? []);
     const usedPackages = new Set<string>();
@@ -232,6 +258,46 @@ async function main(): Promise<void> {
             `registry/r/${name}.json`,
             `contains source ESM extension import "${specifier}"`,
           );
+        }
+
+        // A same-directory import must resolve to a file THIS artifact ships.
+        //
+        // The two other relative shapes were already covered and this one was covered by nobody:
+        // `..` is refused outright a few lines above, and `@/…` resolves through
+        // `registryNameFromTarget`, which then demands the owning item be in
+        // `registryDependencies`. `./density` matches neither — `registryNameFromTarget` returns
+        // `undefined` for it, so `resolveDependencyName` returns `undefined`, so the dependency
+        // check below is skipped and nothing else asked whether the file was there at all.
+        //
+        // Measured on this registry the day the check was written: 26 such imports across 2 of
+        // 100 artifacts, every one of them a runtime import rather than `import type`. A consumer
+        // running `shadcn add theme-provider` received `theme-provider.tsx` importing `./density`
+        // and `themes/index.ts` re-exporting seventeen modules, none of which were in the payload.
+        //
+        // Scoped to `./` on purpose: a file in another artifact is imported as `@/…` here, so a
+        // same-directory specifier naming something this artifact does not carry is either an
+        // undeclared file or a genuine mistake, and both are worth failing on.
+        if (specifier.startsWith("./")) {
+          const target = posix.normalize(
+            posix.join(posix.dirname(file.path), stripExtension(specifier)),
+          );
+          if (!shippedStems.has(target)) {
+            // A declared registry dependency shipping it is the CORRECT answer, not a loophole:
+            // the consumer installs that item too, so the file arrives. Accepting it here is what
+            // stops this check from pushing an author toward declaring the file twice — which is
+            // worse than the gap, because two artifacts then write the same path on install.
+            const owner = shippedBy.get(target);
+            const owned =
+              owner !== undefined &&
+              (owner === name ||
+                [...dependencySet].some((dep) => dependencyItemName(dep) === owner));
+            if (!owned) {
+              addFailure(
+                `registry/r/${name}.json`,
+                `imports "${specifier}" from ${file.path}, which resolves to "${target}" — a path neither this artifact nor any declared registryDependency ships`,
+              );
+            }
+          }
         }
 
         if (specifier.startsWith("@/") || specifier.startsWith(".") || specifier.startsWith("/")) {
