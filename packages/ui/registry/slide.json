@@ -29,6 +29,11 @@
       "target": "components/ui/slide/slide.tsx"
     },
     {
+      "path": "components/primitives/slide/markdown-components.tsx",
+      "type": "registry:lib",
+      "target": "lib/markdown/element-defaults.tsx"
+    },
+    {
       "path": "components/primitives/slide/parse.ts",
       "type": "registry:ui",
       "target": "components/ui/slide/parse.ts"
