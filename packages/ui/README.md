@@ -15,7 +15,7 @@ A React component library built for AI-agent surfaces — coding agents and chat
 <!-- BEGIN:counts -->
 [![license](https://img.shields.io/badge/license-Apache--2.0-7C3AED?style=flat-square)](./LICENSE)
 [![react](https://img.shields.io/badge/react-18+-7C3AED?style=flat-square&logo=react&logoColor=white)](https://react.dev)
-[![tests](https://img.shields.io/badge/tests-1714%20passing-success?style=flat-square)](#quality-gates)
+[![tests](https://img.shields.io/badge/tests-1744%20passing-success?style=flat-square)](#quality-gates)
 [![components](https://img.shields.io/badge/components-103-7C3AED?style=flat-square)](#component-catalog)
 [![shadcn](https://img.shields.io/badge/shadcn-compatible-000?style=flat-square)](https://ui.shadcn.com/docs/registry)
 <!-- END:counts -->
@@ -373,7 +373,7 @@ tests/             fixture-shadcn-app/ (registry install integration test)
 Honest claims only.
 
 <!-- BEGIN:production-stats -->
-- **Production.** 103 components, 1714 tests passing, zero a11y violations across the axe sweep over every story, bundle size enforced. Quality gates run on every PR.
+- **Production.** 103 components, 1744 tests passing, zero a11y violations across the axe sweep over every story, bundle size enforced. Quality gates run on every PR.
 <!-- END:production-stats -->
 - **Registry distribution.** Served at [`https://usetheokit.github.io/theokit-ui/r/`](https://usetheokit.github.io/theokit-ui/r/) (GitHub Pages, auto-deploy on every push to `main`). The branded `https://ui.usetheo.dev/r/` URL is a single DNS CNAME away — point `ui.usetheo.dev` at `usetheodev.github.io` and add it as a custom domain in Pages settings.
 - **ESM-only.** Modern bundlers only. Consumers on CommonJS Node need to transpile or use a bundler.

@@ -1,5 +1,136 @@
 # Changelog
 
+## 1.12.0
+
+### Minor Changes
+
+- f0b15d4: A chat message's markdown renders through this package's own element defaults instead of bare tags.
+
+  `slideMarkdownComponents` shipped as the default of `<Slide components>` and was wired in exactly one
+  place — the slide primitive. It appeared nowhere on the chat path, where `<ChatMessageResponse>`
+  passed a map holding only `code` and `pre`. So every default this package wrote applied to the slide
+  surface and none to the chat surface, which is the markdown surface a scaffolded application actually
+  renders. A `![]()` in an assistant's reply became a bare `<img>` with no `loading="lazy"` and no
+  `decoding="async"`, fetched and decoded eagerly however far below the fold it sat, while tokens were
+  still streaming in.
+
+  This is a performance and accessibility fix, not a security one. `parseMarkdownToReact` sanitizes with
+  `allowDangerousHtml=false` and the schema strips `target`, so a markdown link on this path could never
+  open a new browsing context and no `window.opener` was ever exposed. The `rel="noopener noreferrer"`
+  an external link now carries is defence in depth, for the reason the slide default already records:
+  the sanitize baseline is safe and its extension point is not.
+
+  Consumers rendering `<ChatMessage>` or `<ChatMessageResponse>` see two added attributes on markdown
+  images and one on external markdown links. Nothing is removed and no prop changed, so the only code
+  that can notice is a test asserting on exact rendered markup.
+
+  The defaults are supplied at the chat surface rather than merged inside `parseMarkdownToReact`. The
+  parser keeps handing a caller's `components` map through untouched: merging underneath it would change
+  what the parser returns for a caller that passed no map at all, which is wider than the gap being
+  fixed, and it would give this package a third answer to merge-vs-replace beside `<Slide>`'s deliberate
+  replace. `<Slide>` is unchanged — a supplied map still replaces the defaults there rather than merging
+  with them.
+
+- 76699e5: `SlideDeck` accepts a `components` map and forwards it to every slide it renders.
+
+  `Slide` has accepted `components` — a map of markdown element renderers — as public API since the
+  primitive shipped. `SlideDeck` never declared it, so an application that renders a deck rather than
+  a single slide had no way to supply its own anchor or image renderer. The seam existed on the
+  primitive and was unreachable through the composite every consumer actually uses.
+
+  Nothing changes for a deck that passes nothing: the composite forwarded no value before, so the
+  primitive's default was already in force, and it still is. What becomes possible is overriding it.
+
+  The map reaches all five renderers a deck mounts — the slide on screen, both presenter previews,
+  each thumbnail and the hidden print container — so a supplied renderer cannot apply on screen while
+  the print output and the thumbnail rail quietly keep the defaults.
+
+  The prop is typed from the primitive rather than restated, so the two cannot drift apart: whatever
+  `Slide` accepts, a deck accepts.
+
+  As on the primitive, a supplied map REPLACES this package's defaults rather than merging with them.
+  A deck passing `{ a: MyLink }` also gives up the built-in `img` renderer and the `loading="lazy"`,
+  `decoding="async"` and `alt` normalisation it applies — and `components={{}}` gives up all of them
+  while supplying nothing. Pass a memoised map: a new object identity on every render re-parses every
+  slide.
+
+### Patch Changes
+
+- fa9109a: `SlideDeck` now relays `plugins` to the thumbnails and the presenter view, not just to the main
+  viewport.
+
+  `plugins` was already public API and already carried on `DeckContext`, and both its docblocks
+  promised it reached "every inner `<Slide>`". Three of the five inner renderers never received it:
+  the thumbnail strip and both presenter previews read the context without it. A plugin that is
+  absent does not degrade to unstyled output — it degrades to raw source, because the sanitizer
+  strips tags no plugin declared. So a deck using the math or mermaid plugin showed the presenter a
+  literal `$$…$$` while the audience saw the rendered form, and rendered every thumbnail as a block
+  of code-fence text instead of the shape the slide actually has.
+
+  Passing no `plugins` behaves exactly as before, and a deck that passed them already rendered the
+  main viewport correctly — what changes is that the other three renderers now agree with it.
+
+- 386e7d1: a `<Slide>` inside a deck cannot be rendered without the deck's relay
+
+  `SlideDeck` gained a `components` seam (B-286) and already had `plugins` (B-288), and both were
+  relayed by writing the same four props at every render site. Five sites carried the same block, and
+  duplication was the mild half: the real cost is that a SIXTH site added later inherits nothing — it
+  renders a `<Slide>` that silently drops the deck's overrides, which is the defect both items were
+  filed to fix.
+
+  `<DeckSlide>` reads the relay from context, so a caller says which markdown and which label and
+  cannot say "without the deck's overrides" — that is not a decision a site inside a deck is allowed to
+  make. Four of the five sites now go through it.
+
+  The fifth is `PrintContainer`, and it stays as it was: its own comment states that it is drilled
+  rather than context-read and never calls `useDeckContext()`. Converting it would have thrown.
+
+- 99f8fbc: the markdown element defaults are delivered to the consumer, by both the slide and the chat
+
+  `chat-message` imported the shared element-defaults map with a relative specifier that climbed out
+  of its own directory (`../../primitives/slide/markdown-components`). `registry:validate` refuses any
+  inlined import starting with `..`, because a component copied into a consumer's project has no such
+  path to climb — so `Static gates` was red, and `CI` with it.
+
+  Measuring the fix found the other half, which predates it: the **slide** artifact referenced that map
+  too and never shipped it. Its specifier was `./markdown-components`, which the validator allows
+  because it does not start with `..` — and the artifact carried 16 files, none of them the map. So a
+  consumer installing `slide` got a component importing a file that was not there.
+
+  Both descriptors now declare the map with the target `lib/markdown/element-defaults.tsx`, which puts
+  it in the build's rewrite table and in the copied file set. The artifacts carry 17 and 18 files, the
+  import resolves to `@/lib/markdown/element-defaults` on both paths, and `registry:validate` passes
+  for 100 items.
+
+## 1.11.0
+
+### Minor Changes
+
+- f1dc64d: `Slide` renders markdown through this package's own components instead of bare tags.
+
+  `components` was already public API and nothing supplied a default, so every consumer that did not
+  pass one rendered a user's markdown as raw `<a>` and `<img>`: a link opening wherever its href
+  pointed, with no `rel`, and an image with no `alt` and no lazy loading. The default now passes every
+  href through `safeHref`, gives an external link `rel="noopener noreferrer"`, and gives an image an
+  empty `alt` rather than none when the markdown omitted it.
+
+  Passing `components` still replaces the default wholesale — it is a fallback, not a merge, so an
+  application that supplied its own map behaves exactly as before.
+
+### Patch Changes
+
+- f1dc64d: `ThemeSwitcher` no longer triggers a React hydration mismatch.
+
+  Its screen-reader announcement rendered `mode` as a text node, and `ThemeProvider` resolves `mode`
+  from `localStorage` and `prefers-color-scheme` inside an effect. The server cannot know either, so
+  it rendered the default and the client frequently rendered something else — a mismatch by
+  construction, which React answers by discarding the server markup for that subtree (minified error
+  #418).
+
+  The announcement is now empty until the component has mounted, so the server and the client's first
+  render agree. Nothing a sighted user sees changed, and the announcement still fires on every
+  subsequent change.
+
 ## 1.10.2
 
 ### Patch Changes
@@ -440,6 +571,7 @@
 ## [Unreleased]
 
 ### Added
+
 - **ci:** `Promotion gate` refuses a pull request into `develop` that does not come from this repository's own `workspace`. `git-safety.md` has always said so and `validate-command.sh:245` has always blocked it — for a `git merge` typed locally, which is not how any of this repository's 45 promotions landed (usetheokit/theokit#606)
 
 - `space` and `motion.stagger` on `Theme`, so every token the package declares can be set through
