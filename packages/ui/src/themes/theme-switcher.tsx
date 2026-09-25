@@ -107,14 +107,47 @@ function ThemeSwitcher({ className, showModeToggle = true }: ThemeSwitcherProps)
         <button
           type="button"
           onClick={toggleMode}
-          aria-label={`Switch to ${mode === "light" ? "dark" : "light"} mode`}
+          /*
+           * #155, second half. `mode` is read in three places here and only the live region above was
+           * guarded; this label and the icon below were not, and both diverge for the same reason —
+           * the server has no `mode`, so it renders `defaultMode` while the client may render
+           * something else.
+           *
+           * Measured against the published 1.12.0 in a real browser (theokit's
+           * `scripts/probe-hydration.mjs`, Chrome over CDP, built scaffold): React #418 with
+           * `args[]=HTML`, and the printed tree named this `aria-label` and the `<Moon>`/`<Sun>`
+           * swap. The icon is the worse half: those are different components with different SVG
+           * children, so the mismatch is structural and React discards the server markup and rebuilds
+           * the whole tree — the value of SSR thrown away on every page load.
+           *
+           * Guarded the same way the live region already is, deliberately rather than inventing a
+           * second pattern: `mounted` is false on the server AND on the client's first render, so the
+           * two agree by construction and it does not matter WHAT makes `mode` differ afterwards.
+           * A CSS approach (render both icons, let `data-mode` on `<html>` pick) would avoid the
+           * one-frame delay, and it needs `<ThemeScript>` to be rendered to beat the first paint —
+           * which the default scaffold does not do. That is a larger decision than this fix.
+           *
+           * The button keeps its box and stays operable while unmounted: `size-9` is on the button and
+           * the placeholder is `size-4`, so nothing shifts when the icon arrives.
+           */
+          aria-label={
+            mounted ? `Switch to ${mode === "light" ? "dark" : "light"} mode` : "Switch colour mode"
+          }
           className={cn(
             "inline-flex size-9 items-center justify-center rounded-lg border border-border/60 bg-card",
             "text-foreground transition-colors hover:bg-muted",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
           )}
         >
-          {mode === "light" ? <Moon className="size-4" /> : <Sun className="size-4" />}
+          {mounted ? (
+            mode === "light" ? (
+              <Moon className="size-4" />
+            ) : (
+              <Sun className="size-4" />
+            )
+          ) : (
+            <span className="size-4" aria-hidden="true" />
+          )}
         </button>
       ) : null}
     </div>
