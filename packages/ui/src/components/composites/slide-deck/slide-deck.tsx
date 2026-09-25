@@ -32,6 +32,7 @@ import {
 import { Slide, type SlidePlugin, type SlideProps } from "../../primitives/slide/index.js";
 import { DeckContext, type DeckContextValue, useDeckContext } from "./context.js";
 import { Controls } from "./controls.js";
+import { DeckSlide } from "./deck-slide.js";
 import { countFragmentsInMarkdown } from "./fragments.js";
 import { PresenterView } from "./presenter-view.js";
 import { printDeck } from "./print-styles.js";
@@ -280,7 +281,7 @@ const SlideDeckBase: FC<SlideDeckProps> = ({
 };
 
 const SlidesView: FC<{ className?: string }> = ({ className }) => {
-  const { state, slides, transition, plugins, components } = useDeckContext();
+  const { state, slides, transition } = useDeckContext();
   const current = slides[state.currentIndex];
   return (
     <div
@@ -302,12 +303,7 @@ const SlidesView: FC<{ className?: string }> = ({ className }) => {
           data-theo-slide-deck-slide-state="incoming"
           style={{ position: "absolute", inset: 0 }}
         >
-          <Slide
-            markdown={current.markdown}
-            plugins={plugins}
-            components={components}
-            aria-label={`Slide ${state.currentIndex + 1}`}
-          />
+          <DeckSlide markdown={current.markdown} aria-label={`Slide ${state.currentIndex + 1}`} />
         </div>
       ) : (
         <div

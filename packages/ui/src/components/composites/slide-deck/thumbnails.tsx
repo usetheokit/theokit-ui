@@ -13,8 +13,8 @@
  * Click handler dispatches JUMP_TO. Auto-scroll keeps current thumbnail visible.
  */
 import { type FC, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Slide, type SlidePlugin, type SlideProps } from "../../primitives/slide/index.js";
 import { useDeckContext } from "./context.js";
+import { DeckSlide } from "./deck-slide.js";
 
 export interface ThumbnailsProps {
   className?: string;
@@ -33,10 +33,6 @@ interface ThumbnailItemProps {
   eager: boolean;
   onSelect: (index: number) => void;
   registerRef: (index: number, el: HTMLElement | null) => void;
-  /** Rich-content plugins relayed from DeckContext (D15 / B-288). */
-  plugins?: SlidePlugin[];
-  /** Markdown component overrides relayed from DeckContext (B-286). */
-  components?: SlideProps["components"];
 }
 
 const ThumbnailItem: FC<ThumbnailItemProps> = ({
@@ -47,8 +43,6 @@ const ThumbnailItem: FC<ThumbnailItemProps> = ({
   eager,
   onSelect,
   registerRef,
-  plugins,
-  components,
 }) => {
   const [revealed, setRevealed] = useState(eager);
 
@@ -115,12 +109,7 @@ const ThumbnailItem: FC<ThumbnailItemProps> = ({
         }}
       >
         {revealed ? (
-          <Slide
-            markdown={markdown}
-            plugins={plugins}
-            components={components}
-            aria-label={`Thumbnail ${index + 1}`}
-          />
+          <DeckSlide markdown={markdown} aria-label={`Thumbnail ${index + 1}`} />
         ) : (
           <div
             data-theo-slide-deck-thumbnail-placeholder
@@ -137,7 +126,7 @@ const ThumbnailItem: FC<ThumbnailItemProps> = ({
 };
 
 export const Thumbnails: FC<ThumbnailsProps> = ({ className, scale = 0.18 }) => {
-  const { state, dispatch, slides, plugins, components } = useDeckContext();
+  const { state, dispatch, slides } = useDeckContext();
   const refs = useRef<Map<number, HTMLElement>>(new Map());
 
   const registerRef = useCallback((index: number, el: HTMLElement | null) => {
@@ -192,8 +181,6 @@ export const Thumbnails: FC<ThumbnailsProps> = ({ className, scale = 0.18 }) => 
             eager={eagerAll || index < 3 /* first 3 always eager for snappy first paint */}
             onSelect={onSelect}
             registerRef={registerRef}
-            plugins={plugins}
-            components={components}
           />
         </li>
       ))}
