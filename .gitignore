@@ -97,3 +97,8 @@ ds-bundle/
 
 # Generated at CSS precompile time (build-precompiled-css.ts) — never committed
 packages/ui/src/styles/components-entry.generated.css
+
+# The write root: per-run output from the maintenance kit, never this package's source.
+# `records-location.md` makes it the one place cycles write, so it is ignored whole —
+# a tracked file here would put one machine's run history in everyone's diff.
+.squad/
