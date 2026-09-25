@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { CodeBlock } from "./code-block.js";
@@ -29,12 +29,35 @@ describe("CodeBlock — shape + a11y", () => {
 describe("CodeBlock — copy interaction", () => {
   it("flips the button label to 'Copied' after click (when clipboard API resolves)", async () => {
     // happy-dom ships a working `navigator.clipboard.writeText` that resolves.
+    //
+    // B-305 — this assertion used to race two clocks it had no control over, and lost roughly one
+    // full-suite run in eight.
+    //
+    // `code-block.tsx` shows both. The handler sets `copied` and then
+    // `setTimeout(() => setCopied(false), 2000)`, so the label exists for TWO seconds. The render
+    // effect calls `getHighlighter`, which does `await import("shiki")` — module-cached, so whichever
+    // test mounts a CodeBlock first in a worker pays for the whole grammar load. When that cost lands
+    // between the click and the query, the label has already reverted, and the failure reads `Unable
+    // to find an element with the text: /copied/i` — a query that matched nothing, which says nothing
+    // about WHY. It is not a timeout: waiting longer cannot help, because the thing being waited for
+    // stopped existing.
+    //
+    // Two changes, neither of them a longer window. No `language`, so the effect returns at
+    // `if (!language) return` and the shiki import never happens — highlighting is not what this test
+    // is about. And the assertion reads `aria-label`, which IS the state
+    // (`copied ? "Copied" : "Copy code"`), so a failure prints the value it found instead of
+    // reporting an absence.
     const user = userEvent.setup();
-    render(<CodeBlock code="hello world" language="text" />);
+    render(<CodeBlock code="hello world" />);
     const button = screen.getByRole("button", { name: /copy/i });
+    expect(button).toHaveAttribute("aria-label", "Copy code");
 
     await user.click(button);
-    expect(await screen.findByText(/copied/i)).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(button).toHaveAttribute("aria-label", "Copied");
+    });
+    expect(screen.getByText("Copied")).toBeInTheDocument();
   });
 
   it("does not throw when clipboard.writeText rejects (graceful degradation)", async () => {
