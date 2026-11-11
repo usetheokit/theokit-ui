@@ -10,6 +10,7 @@
 //   - screens/     example screen compositions (stories only, not exported)
 
 export { cn } from "./lib/cn.js";
+export * from "./lib/i18n/index.js";
 
 // Generic primitives re-exported from `@usetheo/ui`.
 //
