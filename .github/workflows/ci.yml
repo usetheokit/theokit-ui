@@ -113,9 +113,12 @@ jobs:
         with:
           name: ui-dist
           path: packages/ui/dist
+      # Only the browser: the runner image already carries Chromium's system libraries (it ships Google
+      # Chrome). `--with-deps` adds an apt install, and on 2026-11-11 four runs in a row failed there
+      # because the runner could not resolve the Ubuntu mirrors.
       - name: Install Playwright Chromium
         working-directory: packages/ui
-        run: pnpm exec playwright install --with-deps chromium
+        run: pnpm exec playwright install chromium
       - run: pnpm --filter=@theokit/ui quality:a11y
       - run: pnpm --filter=@theokit/ui quality:visual
       - run: pnpm --filter=@theokit/ui ladle:build
