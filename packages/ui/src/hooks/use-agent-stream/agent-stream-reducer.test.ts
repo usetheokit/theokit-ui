@@ -83,4 +83,29 @@ describe("agentStreamReducer (M5 — SDK stream → AgentStreamItem[])", () => {
     expect(msg?.message.parts[0]).toMatchObject({ type: "text", text: "bye" });
     expect(s.items.some((i) => i.kind === "streaming")).toBe(false);
   });
+
+  it("accumulates the SDK's text-delta into one streaming item", () => {
+    const s = fold({ type: "text-delta", text: "He" }, { type: "text-delta", text: "llo" });
+    expect(s.items).toEqual([{ kind: "streaming", id: "__streaming__", partial: "Hello" }]);
+  });
+
+  it("ignores thinking-delta", () => {
+    const s = fold({ type: "thinking-delta", text: "hmm" });
+    expect(s).toEqual(initialAgentStreamState);
+  });
+
+  it.each(["done", "error"])("fails a running tool when the stream ends with %s", (end) => {
+    const s = fold(
+      { type: "tool_call", call_id: "c1", name: "ls", status: "running" },
+      { type: end, error: "boom" },
+    );
+    const tool = s.items.find((i) => i.kind === "tool-call") as ToolCallStreamItem;
+    expect(tool.status).toBe("failed");
+  });
+
+  it("ignores events after done", () => {
+    const done = fold({ type: "text-delta", text: "a" }, { type: "done" });
+    const after = agentStreamReducer(done, { type: "text-delta", text: "b" });
+    expect(after.items).toBe(done.items);
+  });
 });

@@ -4,11 +4,15 @@
  * `@theokit/sdk` import — exhaustively unit-testable (M5 T1.1).
  *
  * Handles both stream granularities:
- * - `text_delta` — append to the live buffer (fine-grained token stream),
+ * - `text-delta` (the SDK's name) / `text_delta` (legacy alias) — append to the live buffer,
+ * - `thinking-delta` — no-op: this reducer has no reasoning item,
  * - `assistant` — finalize the complete turn into a message item,
  * - `tool_call` — upsert a tool-call item keyed by `call_id`,
  * - `error` — surface an error item,
  * - `done` — finalize any trailing streamed text and mark the stream complete.
+ *
+ * `done` and `error` are terminal: tools still `running` become `failed` and later events are
+ * ignored (a new stream resets state).
  *
  * Any other `type` (system/user/thinking/status/task/request/object_delta) is
  * ignored without throwing — forward-compatible with new SDK message types.
@@ -130,11 +134,23 @@ function assistantText(msg: SdkStreamMessage): string {
     .join("");
 }
 
+/** A run that ended can no longer finish its tools: close the ones still running. */
+function failRunningTools(items: AgentStreamItem[]): AgentStreamItem[] {
+  return items.map((i) =>
+    i.kind === "tool-call" && i.status === "running" ? { ...i, status: "failed" } : i,
+  );
+}
+
 export function agentStreamReducer(
   state: AgentStreamState,
   msg: SdkStreamMessage,
 ): AgentStreamState {
+  if (state.status === "done" || state.status === "error") return state;
   switch (msg.type) {
+    case "thinking-delta":
+      // No reasoning item in this reducer yet; ignore.
+      return state;
+    case "text-delta":
     case "text_delta": {
       const streamingText = state.streamingText + (msg.text ?? "");
       const item: AgentStreamItem = { kind: "streaming", id: STREAMING_ID, partial: streamingText };
@@ -168,12 +184,18 @@ export function agentStreamReducer(
         ...state,
         status: "error",
         error: new Error(message),
-        items: [...withoutStreaming(state.items), item],
+        items: [...failRunningTools(withoutStreaming(state.items)), item],
       };
     }
     case "done": {
       const next = finalizeText(state.items, state.streamingText, state.seq);
-      return { ...state, streamingText: "", status: "done", items: next.items, seq: next.seq };
+      return {
+        ...state,
+        streamingText: "",
+        status: "done",
+        items: failRunningTools(next.items),
+        seq: next.seq,
+      };
     }
     default:
       return state;
