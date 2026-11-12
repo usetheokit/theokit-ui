@@ -120,4 +120,55 @@ describe("AgentComposer", () => {
     expect(onSubmit).not.toHaveBeenCalled();
     expect(ta.value).toBe("/clear ");
   });
+
+  it("submits on Enter for a mid-sentence path and leaves the value unchanged", () => {
+    const onSubmit = vi.fn();
+    render(<Harness onSubmit={onSubmit} />);
+    const ta = screen.getByRole("textbox") as HTMLTextAreaElement;
+    fireEvent.change(ta, { target: { value: "copy it to /tmp/out" } });
+    expect(screen.queryByRole("menu")).toBeNull();
+    fireEvent.keyDown(ta, { key: "Enter" });
+    expect(onSubmit).toHaveBeenCalledWith("copy it to /tmp/out");
+    expect(ta.value).toBe("copy it to /tmp/out");
+  });
+
+  it("does not replace a mid-sentence slash word with a command", () => {
+    const onSubmit = vi.fn();
+    render(<Harness onSubmit={onSubmit} />);
+    const ta = screen.getByRole("textbox") as HTMLTextAreaElement;
+    fireEvent.change(ta, { target: { value: "run /c" } });
+    fireEvent.keyDown(ta, { key: "Enter" });
+    expect(onSubmit).toHaveBeenCalledWith("run /c");
+    expect(ta.value).toBe("run /c");
+  });
+
+  it("opens the menu for a leading `/cl` and Enter inserts the command", () => {
+    render(<Harness />);
+    const ta = screen.getByRole("textbox") as HTMLTextAreaElement;
+    fireEvent.change(ta, { target: { value: "/cl" } });
+    expect(screen.getByRole("menu")).toBeInTheDocument();
+    expect(screen.getByText("/clear")).toBeInTheDocument();
+    fireEvent.keyDown(window, { key: "Enter" });
+    expect(ta.value).toBe("/clear ");
+  });
+
+  it("shows no menu once a command argument has started", () => {
+    render(<Harness />);
+    fireEvent.change(screen.getByRole("textbox"), {
+      target: { value: "/export /tmp/x" },
+    });
+    expect(screen.queryByRole("menu")).toBeNull();
+  });
+
+  it("still opens the files menu for a mid-sentence `@`", () => {
+    render(
+      <AgentComposer
+        value="see @rea"
+        onValueChange={() => {}}
+        files={[{ id: "r", label: "README.md", description: "docs" }]}
+      />,
+    );
+    expect(screen.getByRole("menu")).toBeInTheDocument();
+    expect(screen.getByText("README.md")).toBeInTheDocument();
+  });
 });
