@@ -632,6 +632,7 @@
 
 ### Fixed
 
+- `AgentComposer` opens the command menu only for a `/` at the start of the first line, and only until the first whitespace, and no longer swallows Enter when the open menu has no matching item. A message containing a path such as `/tmp/out` can be sent with Enter, and `run /c` is no longer rewritten to `run /clear `. `@` and `#` mentions still work mid-sentence.
 - `agentStreamReducer` (behind `useAgentStream`) now handles the SDK's `"text-delta"` event, so text streams live instead of appearing when the turn ends; `"text_delta"` stays as a legacy alias and `"thinking-delta"` is ignored. After `done` or `error`, tools still `running` become `failed` and later events are ignored (usetheokit/theokit-ui#186)
 
 ### Added
