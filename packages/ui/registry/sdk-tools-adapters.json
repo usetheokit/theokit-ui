@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "sdk-tools-adapters",
+  "type": "registry:lib",
+  "title": "SDK tools result adapters",
+  "description": "Pure converters from sdk-tools string results (shell, git diff, read file, list dir, apply patch) into rich-primitive props.",
+  "registryDependencies": [
+    "created-files-card",
+    "diff-viewer",
+    "terminal-panel"
+  ],
+  "files": [
+    {
+      "path": "lib/sdk-tools-adapters/sdk-tools-adapters.ts",
+      "type": "registry:lib",
+      "target": "lib/sdk-tools-adapters/sdk-tools-adapters.ts"
+    }
+  ]
+}

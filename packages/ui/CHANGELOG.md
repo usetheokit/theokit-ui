@@ -632,6 +632,7 @@
 
 ### Fixed
 
+- The default tool registry (`defaultToolRegistry`) runs the sdk-tools adapters on string tool results, so `shell_exec`, `git_diff`, `read_file`, `list_dir` and `apply_patch` render as terminal lines, `DiffViewer`, `CodeBlock`, `DataTable` and `CreatedFilesCard` instead of raw JSON. `defaultClassifyTool` checks exact names first and matches hints only on word boundaries, so `thread_summary` and `execute_sql` are no longer classified as code or terminal (usetheokit/theokit-ui#188)
 - `ContextWindowBar` renders an unknown state (no percentage, neutral tone, no `aria-valuenow`) when `total` is 0 or not finite, instead of 100% in the danger colour or `NaN%` (usetheokit/theokit-ui#190)
 - `AgentComposer` opens the command menu only for a `/` at the start of the first line, and only until the first whitespace, and no longer swallows Enter when the open menu has no matching item. A message containing a path such as `/tmp/out` can be sent with Enter, and `run /c` is no longer rewritten to `run /clear `. `@` and `#` mentions still work mid-sentence.
 - `agentStreamReducer` (behind `useAgentStream`) now handles the SDK's `"text-delta"` event, so text streams live instead of appearing when the turn ends; `"text_delta"` stays as a legacy alias and `"thinking-delta"` is ignored. After `done` or `error`, tools still `running` become `failed` and later events are ignored (usetheokit/theokit-ui#186)
