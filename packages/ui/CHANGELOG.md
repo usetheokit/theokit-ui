@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.13.1
+
+### Patch Changes
+
+- 079085a: `useAgentStream` now streams text from the SDK's `"text-delta"` event (`"text_delta"` still works). When a run ends with `done` or `error`, tools still running are marked failed and later events are ignored.
+
 ## 1.13.0
 
 ### Minor Changes
