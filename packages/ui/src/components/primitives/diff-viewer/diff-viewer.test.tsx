@@ -70,4 +70,40 @@ describe("parseUnifiedDiffToHunks", () => {
     expect(out.length).toBe(2);
     expect(out[0]?.header).toContain("@@");
   });
+
+  const GIT_DIFF = `diff --git a/src/x.ts b/src/x.ts
+index 1111..2222 100644
+--- a/src/x.ts
++++ b/src/x.ts
+@@ -40,3 +40,3 @@ fn
+ a
+-b
++c
+`;
+
+  it("reads the @@ offsets and drops the trailing empty line", () => {
+    const out = parseUnifiedDiffToHunks(GIT_DIFF);
+    expect(out[1]?.lines).toEqual([
+      { kind: "unchanged", oldNumber: 40, newNumber: 40, content: "a" },
+      { kind: "removed", oldNumber: 41, content: "b" },
+      { kind: "added", newNumber: 41, content: "c" },
+    ]);
+  });
+
+  it("does not render git header lines as unchanged code", () => {
+    const lines = parseUnifiedDiffToHunks(GIT_DIFF).flatMap((h) => h.lines);
+    expect(
+      lines.filter(
+        (l) =>
+          l.kind === "unchanged" &&
+          (l.content.startsWith("diff --git") || l.content.startsWith("index ")),
+      ),
+    ).toEqual([]);
+  });
+
+  it("restarts numbering at each hunk header", () => {
+    const out = parseUnifiedDiffToHunks("@@ -1,1 +1,1 @@\n a\n@@ -10,1 +12,1 @@\n b");
+    expect(out[0]?.lines[0]).toMatchObject({ oldNumber: 1, newNumber: 1 });
+    expect(out[1]?.lines[0]).toMatchObject({ oldNumber: 10, newNumber: 12 });
+  });
 });
