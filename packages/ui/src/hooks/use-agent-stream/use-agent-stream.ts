@@ -18,15 +18,35 @@ import {
 } from "./agent-stream-reducer.js";
 import type { SdkStreamMessage } from "./types.js";
 
+/**
+ * `source` is an `AsyncIterable` or a factory returning one. A new `source` identity resets the
+ * state to empty. A bare `AsyncIterable` cannot survive React StrictMode's double mount (the first
+ * cleanup calls `return()` on it, and a returned generator cannot restart), so prefer a factory;
+ * it is called once per mount and must have a stable identity (module-level or `useCallback`).
+ */
 export function useAgentStream(
-  stream: AsyncIterable<SdkStreamMessage> | undefined,
+  source: AsyncIterable<SdkStreamMessage> | (() => AsyncIterable<SdkStreamMessage>) | undefined,
 ): AgentStreamState {
   const [state, dispatch] = useReducer(agentStreamReducer, initialAgentStreamState);
 
   useEffect(() => {
-    if (stream === undefined) return;
-    const iterator = stream[Symbol.asyncIterator]();
+    if (source === undefined) {
+      dispatch({ type: "reset" });
+      return;
+    }
+    const iterable = typeof source === "function" ? source() : source;
+    const iterator = iterable[Symbol.asyncIterator]();
     let cancelled = false;
+    // Drop the previous source's state right before this source's first event, so a source that
+    // is replaced mid-flight never mixes its items with the old ones.
+    let fresh = true;
+    const send = (action: Parameters<typeof dispatch>[0]) => {
+      if (fresh) {
+        fresh = false;
+        dispatch({ type: "reset" });
+      }
+      dispatch(action);
+    };
 
     void (async () => {
       try {
@@ -34,15 +54,15 @@ export function useAgentStream(
           const { value, done } = await iterator.next();
           if (cancelled) return;
           if (done) {
-            dispatch({ type: "done" });
+            send({ type: "done" });
             return;
           }
-          dispatch(value);
+          send(value);
         }
       } catch (cause) {
         if (cancelled) return;
         const message = cause instanceof Error ? cause.message : String(cause);
-        dispatch({ type: "error", error: message });
+        send({ type: "error", error: message });
       }
     })();
 
@@ -51,7 +71,7 @@ export function useAgentStream(
       // Tear down the source generator / connection promptly on unmount.
       void iterator.return?.(undefined);
     };
-  }, [stream]);
+  }, [source]);
 
   return state;
 }
