@@ -14,10 +14,18 @@ interface ContextWindowBarProps extends HTMLAttributes<HTMLDivElement> {
   /** Compact mode hides numbers and label; just the bar. */
   compact?: boolean;
   /**
-   * Override warning thresholds (0..1). Defaults: warn 0.7, danger 0.9.
+   * Override warning thresholds (0..1). Defaults: warn 0.75, danger 0.9
+   * (same as `contextPressure` in `@theokit/agents`).
    */
   warnAt?: number;
   dangerAt?: number;
+  /**
+   * Pressure computed by the caller (for example with `contextPressure` from
+   * `@theokit/agents`). Wins over warnAt/dangerAt for the tone.
+   */
+  pressure?: "ok" | "warn" | "critical";
+  /** The token count is an estimate; render it with a leading "~". */
+  estimated?: boolean;
 }
 
 const formatTokens = (n: number) => {
@@ -42,23 +50,37 @@ const ContextWindowBar = forwardRef<HTMLDivElement, ContextWindowBarProps>(
       trailing,
       label = "Context",
       compact,
-      warnAt = 0.7,
+      warnAt = 0.75,
       dangerAt = 0.9,
+      pressure,
+      estimated,
       ...props
     },
     ref,
   ) => {
-    const ratio = Math.max(0, Math.min(1, used / total));
-    const tone = ratio >= dangerAt ? "destructive" : ratio >= warnAt ? "warning" : "primary";
+    const known = Number.isFinite(total) && total > 0;
+    const ratio = known ? Math.max(0, Math.min(1, used / total)) : 0;
     const percent = Math.round(ratio * 100);
+    const tone = !known
+      ? "neutral"
+      : pressure
+        ? ({ ok: "primary", warn: "warning", critical: "destructive" } as const)[pressure]
+        : ratio >= dangerAt
+          ? "destructive"
+          : ratio >= warnAt
+            ? "warning"
+            : "primary";
+    const usedText = `${estimated ? "~" : ""}${formatTokens(used)}`;
 
     const barColor = {
+      neutral: "bg-muted-foreground",
       primary: "bg-primary",
       warning: "bg-warning",
       destructive: "bg-destructive",
     }[tone];
 
     const textColor = {
+      neutral: "text-muted-foreground",
       primary: "text-foreground",
       warning: "text-warning",
       destructive: "text-destructive",
@@ -77,8 +99,16 @@ const ContextWindowBar = forwardRef<HTMLDivElement, ContextWindowBarProps>(
               {label}
             </span>
             <span className={cn("font-mono text-body-sm tabular-nums", textColor)}>
-              {formatTokens(used)} / {formatTokens(total)}{" "}
-              <span className="opacity-60">({percent}%)</span>
+              {known ? (
+                <>
+                  {usedText} / {formatTokens(total)}{" "}
+                  <span className="opacity-60">({percent}%)</span>
+                </>
+              ) : (
+                <>
+                  {usedText} <span className="opacity-60">(unknown)</span>
+                </>
+              )}
             </span>
           </div>
         ) : null}
@@ -86,10 +116,10 @@ const ContextWindowBar = forwardRef<HTMLDivElement, ContextWindowBarProps>(
           className="h-1.5 w-full overflow-hidden rounded-full bg-muted"
           role="progressbar"
           tabIndex={-1}
-          aria-valuenow={used}
+          aria-valuenow={known ? used : undefined}
           aria-valuemin={0}
-          aria-valuemax={total}
-          aria-label={`${percent}% of context window used`}
+          aria-valuemax={known ? total : undefined}
+          aria-label={known ? `${percent}% of context window used` : "Context window size unknown"}
         >
           <div
             className={cn(

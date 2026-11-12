@@ -632,9 +632,13 @@
 
 ### Fixed
 
+- `ContextWindowBar` with an unknown window (`total <= 0` or not finite) renders "unknown" with a neutral tone and no `aria-valuenow`, instead of 100% in the danger colour or "NaN%" (usetheokit/theokit-ui#190)
+
 - `agentStreamReducer` (behind `useAgentStream`) now handles the SDK's `"text-delta"` event, so text streams live instead of appearing when the turn ends; `"text_delta"` stays as a legacy alias and `"thinking-delta"` is ignored. After `done` or `error`, tools still `running` become `failed` and later events are ignored (usetheokit/theokit-ui#186)
 
 ### Added
+
+- `ContextWindowBar` accepts `pressure` (`"ok" | "warn" | "critical"`, wins over `warnAt`/`dangerAt`) and `estimated` (leading "~" on the used count)
 
 - **ci:** `Promotion gate` refuses a pull request into `develop` that does not come from this repository's own `workspace`. `git-safety.md` has always said so and `validate-command.sh:245` has always blocked it — for a `git merge` typed locally, which is not how any of this repository's 45 promotions landed (usetheokit/theokit#606)
 
@@ -646,6 +650,8 @@
 - `Workflow Lint`, a CI gate running actionlint and zizmor over `.github/workflows/` (#54)
 
 ### Changed
+
+- `ContextWindowBar` default `warnAt` is now 0.75 (was 0.7), matching `contextPressure` in `@theokit/agents`
 
 - The CI workflow is `ci.yml` with a job named `Verify (quality gates)`, matching the six sibling
   repositories in the framework. The job name is the status-check context, so the required checks
