@@ -630,6 +630,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- `agentStreamReducer` (behind `useAgentStream`) now handles the SDK's `"text-delta"` event, so text streams live instead of appearing when the turn ends; `"text_delta"` stays as a legacy alias and `"thinking-delta"` is ignored. After `done` or `error`, tools still `running` become `failed` and later events are ignored (usetheokit/theokit-ui#186)
+
 ### Added
 
 - **ci:** `Promotion gate` refuses a pull request into `develop` that does not come from this repository's own `workspace`. `git-safety.md` has always said so and `validate-command.sh:245` has always blocked it — for a `git merge` typed locally, which is not how any of this repository's 45 promotions landed (usetheokit/theokit#606)
