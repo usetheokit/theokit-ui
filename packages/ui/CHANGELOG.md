@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.14.0
+
+### Minor Changes
+
+- 0884989: `ContextWindowBar` shows an unknown window (`total <= 0` or not finite) as "unknown" with a neutral tone instead of 100% or `NaN%`. The default `warnAt` is now 0.75 to match `contextPressure`. New props `pressure` and `estimated`.
+
+### Patch Changes
+
+- cd3eb9b: `AgentComposer` opens the command menu only for a `/` at the start of the first line, until the first whitespace, and Enter submits whenever the open menu has no matching item. A message with a path like `/tmp/out` can be sent, and `run /c` is no longer replaced by `/clear`. `@` and `#` mentions still work mid-sentence.
+
 ## 1.13.1
 
 ### Patch Changes
