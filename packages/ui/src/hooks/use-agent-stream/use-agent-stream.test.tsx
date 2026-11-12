@@ -1,4 +1,5 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
+import { StrictMode } from "react";
 import { describe, expect, it } from "vitest";
 import type { SdkStreamMessage } from "./types.js";
 import { useAgentStream } from "./use-agent-stream.js";
@@ -39,7 +40,37 @@ async function* finiteStream(msgs: SdkStreamMessage[]): AsyncGenerator<SdkStream
   for (const m of msgs) yield m;
 }
 
+function assistantMsg(text: string): SdkStreamMessage {
+  return { type: "assistant", message: { content: [{ type: "text", text }] } };
+}
+
 describe("useAgentStream (M5 — React hook)", () => {
+  it("starts from an empty state when the source changes", async () => {
+    const a = finiteStream([assistantMsg("a")]);
+    const b = finiteStream([assistantMsg("b")]);
+    const { result, rerender } = renderHook(({ s }) => useAgentStream(s), {
+      initialProps: { s: a },
+    });
+    await waitFor(() => expect(result.current.status).toBe("done"));
+    rerender({ s: b });
+    await waitFor(() => {
+      expect(result.current.status).toBe("done");
+      expect(JSON.stringify(result.current.items)).toContain("b");
+    });
+    expect(result.current.items).toHaveLength(1);
+    expect(JSON.stringify(result.current.items)).not.toContain('"a"');
+  });
+
+  it("survives StrictMode with a factory source", async () => {
+    const factory = () => finiteStream([assistantMsg("x")]);
+    const { result } = renderHook(() => useAgentStream(factory), {
+      wrapper: StrictMode,
+    });
+    await waitFor(() => expect(result.current.status).toBe("done"));
+    expect(result.current.items).toHaveLength(1);
+    expect(JSON.stringify(result.current.items)).toContain("x");
+  });
+
   it("renders streamed text from a mock stream", async () => {
     const stream = finiteStream([
       { type: "text_delta", text: "Hel" },

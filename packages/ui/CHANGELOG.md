@@ -632,6 +632,7 @@
 
 ### Fixed
 
+- `useAgentStream` starts from an empty state when its source changes instead of appending to the previous stream, and accepts a factory `() => AsyncIterable` so each mount opens its own iterator and survives React StrictMode's double mount (usetheokit/theokit-ui#187)
 - `parseUnifiedDiffToHunks` (behind `DiffViewer`) reads the `@@ -a,b +c,d @@` offsets for line numbers, renders git header lines (`diff --git`, `index`, ...) as `meta` instead of code, and ignores the trailing newline and `\ No newline at end of file` (usetheokit/theokit-ui#189)
 - `ContextWindowBar` renders an unknown state (no percentage, neutral tone, no `aria-valuenow`) when `total` is 0 or not finite, instead of 100% in the danger colour or `NaN%` (usetheokit/theokit-ui#190)
 - `AgentComposer` opens the command menu only for a `/` at the start of the first line, and only until the first whitespace, and no longer swallows Enter when the open menu has no matching item. A message containing a path such as `/tmp/out` can be sent with Enter, and `run /c` is no longer rewritten to `run /clear `. `@` and `#` mentions still work mid-sentence.
