@@ -1,0 +1,20 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "sdk-tools-adapters",
+  "type": "registry:lib",
+  "title": "SdkToolsAdapters",
+  "description": "Pure adapters that parse the framework's JSON tool-result strings into props for the diff, terminal, created-files and data-table surfaces.",
+  "dependencies": [],
+  "registryDependencies": [
+    "created-files-card",
+    "diff-viewer",
+    "terminal-panel"
+  ],
+  "files": [
+    {
+      "path": "lib/sdk-tools-adapters/sdk-tools-adapters.ts",
+      "type": "registry:lib",
+      "target": "lib/sdk-tools-adapters/sdk-tools-adapters.ts"
+    }
+  ]
+}

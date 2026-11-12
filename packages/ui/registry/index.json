@@ -421,6 +421,12 @@
       "description": "Defang javascript:/vbscript:/data:text/html URIs before rendering as <a href>. Returns undefined for dangerous protocols so the caller can render a non-link fallback."
     },
     {
+      "name": "sdk-tools-adapters",
+      "type": "registry:lib",
+      "title": "SdkToolsAdapters",
+      "description": "Pure adapters that parse the framework's JSON tool-result strings into props for the diff, terminal, created-files and data-table surfaces."
+    },
+    {
       "name": "session-list-item",
       "type": "registry:ui",
       "title": "SessionListItem",
