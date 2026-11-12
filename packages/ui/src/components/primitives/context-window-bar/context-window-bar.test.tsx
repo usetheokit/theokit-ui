@@ -29,4 +29,33 @@ describe("ContextWindowBar", () => {
     expect(screen.queryByText(/\(50%\)/)).not.toBeInTheDocument();
     expect(screen.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "50");
   });
+
+  it("renders an unknown state when total is 0", () => {
+    const { container } = render(<ContextWindowBar used={500} total={0} />);
+    expect(container.textContent).not.toContain("%");
+    expect(container.textContent).toContain("unknown");
+    expect(container.querySelector(".bg-destructive")).toBeNull();
+    expect(screen.getByRole("progressbar")).not.toHaveAttribute("aria-valuenow");
+  });
+
+  it("never renders NaN for 0/0", () => {
+    const { container } = render(<ContextWindowBar used={0} total={0} />);
+    expect(container.textContent).not.toContain("NaN");
+  });
+
+  it("uses the primary tone at 72% with the 0.75 default", () => {
+    const { container } = render(<ContextWindowBar used={72} total={100} />);
+    expect(container.querySelector(".bg-primary")).not.toBeNull();
+    expect(container.querySelector(".bg-warning")).toBeNull();
+  });
+
+  it("lets pressure decide the tone", () => {
+    const { container } = render(<ContextWindowBar used={10} total={100} pressure="critical" />);
+    expect(container.querySelector(".bg-destructive")).not.toBeNull();
+  });
+
+  it("prefixes the used count with ~ when estimated", () => {
+    render(<ContextWindowBar used={1500} total={200000} estimated />);
+    expect(screen.getByText(/~1\.5k \/ 200\.0k/)).toBeInTheDocument();
+  });
 });

@@ -632,10 +632,17 @@
 
 ### Fixed
 
+- `ContextWindowBar` renders an unknown state (no percentage, neutral tone, no `aria-valuenow`) when `total` is 0 or not finite, instead of 100% in the danger colour or `NaN%` (usetheokit/theokit-ui#190)
+- `AgentComposer` opens the command menu only for a `/` at the start of the first line, and only until the first whitespace, and no longer swallows Enter when the open menu has no matching item. A message containing a path such as `/tmp/out` can be sent with Enter, and `run /c` is no longer rewritten to `run /clear `. `@` and `#` mentions still work mid-sentence.
 - `agentStreamReducer` (behind `useAgentStream`) now handles the SDK's `"text-delta"` event, so text streams live instead of appearing when the turn ends; `"text_delta"` stays as a legacy alias and `"thinking-delta"` is ignored. After `done` or `error`, tools still `running` become `failed` and later events are ignored (usetheokit/theokit-ui#186)
+
+### Changed
+
+- `ContextWindowBar` default `warnAt` is now 0.75 (was 0.7), matching `contextPressure` in `@theokit/agents`
 
 ### Added
 
+- `ContextWindowBar` accepts `pressure` (`"ok" | "warn" | "critical"`, wins over the thresholds) and `estimated` (leading `~` on the used count)
 - **ci:** `Promotion gate` refuses a pull request into `develop` that does not come from this repository's own `workspace`. `git-safety.md` has always said so and `validate-command.sh:245` has always blocked it — for a `git merge` typed locally, which is not how any of this repository's 45 promotions landed (usetheokit/theokit#606)
 
 - `space` and `motion.stagger` on `Theme`, so every token the package declares can be set through

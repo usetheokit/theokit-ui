@@ -51,7 +51,11 @@ interface AgentComposerProps extends ComponentProps<typeof ChatComposer> {
 
 const TRIGGER_CHARS: ReadonlyArray<MentionTrigger> = ["/", "@", "#"];
 
-const TRIGGER_RE = /(^|\s)([/@#])([^\s]*)$/;
+// `@` and `#` are mentions and work mid-sentence.
+const MENTION_RE = /(^|\s)([@#])([^\s]*)$/;
+// `/` is a command: only the first character of the first line, and only until
+// the first whitespace after it.
+const SLASH_RE = /^\/(\S*)$/;
 
 interface DetectedTrigger {
   trigger: MentionTrigger;
@@ -61,7 +65,9 @@ interface DetectedTrigger {
 }
 
 function detectTrigger(value: string): DetectedTrigger | null {
-  const match = value.match(TRIGGER_RE);
+  const slash = value.match(SLASH_RE);
+  if (slash) return { trigger: "/", query: slash[1] ?? "", start: 0 };
+  const match = value.match(MENTION_RE);
   if (!match) return null;
   const leading = match[1] ?? "";
   const triggerChar = match[2] as MentionTrigger;
@@ -132,6 +138,8 @@ export function AgentComposer({
     return [];
   }, [activeTrigger, detected, commands, files, memories, query]);
 
+  const menuOpen = !!activeTrigger && items.length > 0;
+
   const handleSelect = (item: MentionItem) => {
     if (!detected) return;
     const before = value.slice(0, detected.start);
@@ -160,7 +168,7 @@ export function AgentComposer({
   };
 
   const interceptKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (activeTrigger) {
+    if (menuOpen) {
       // Let MentionMenu's global key handler take Arrow/Enter/Esc.
       if (["ArrowDown", "ArrowUp", "Enter", "Escape"].includes(e.key)) {
         if (e.key === "Enter") e.preventDefault(); // also prevent form submit
@@ -182,7 +190,7 @@ export function AgentComposer({
       className={cn("relative", containerClassName)}
     >
       <MentionMenu
-        open={!!activeTrigger && items !== null}
+        open={menuOpen}
         trigger={(activeTrigger ?? "/") as MentionTrigger}
         items={items}
         onSelect={handleSelect}
