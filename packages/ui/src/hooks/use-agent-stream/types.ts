@@ -8,12 +8,13 @@
  *
  * Covers both granularities the Harness emits:
  * - coarse `assistant` turns from `Run.stream()` (complete `content`),
- * - fine `text_delta` frames from `onDelta` / a `subscribe()` handler.
+ * - fine `text-delta` frames (the SDK's name) from `onDelta` / `Run.events()`; `text_delta` is a
+ *   legacy alias still accepted. `thinking-delta` (reasoning) is accepted and ignored.
  */
 export interface SdkStreamMessage {
-  /** Discriminator: "text_delta" | "assistant" | "tool_call" | "thinking" | "error" | "done" | … (others ignored). */
+  /** Discriminator: "text-delta" | "text_delta" (legacy) | "thinking-delta" | "assistant" | "tool_call" | "thinking" | "error" | "done" | … (others ignored). */
   readonly type: string;
-  /** Fine-grained token text (`text_delta`) or reasoning text (`thinking`). */
+  /** Fine-grained token text (`text-delta` / legacy `text_delta`) or reasoning text (`thinking-delta` / `thinking`). */
   readonly text?: string;
   /** Complete assistant turn (`assistant`): the model's content blocks. */
   readonly message?: {

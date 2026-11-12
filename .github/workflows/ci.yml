@@ -2,7 +2,7 @@ name: CI
 
 on:
   pull_request:
-    branches: [main, develop]
+    branches: [main, develop, workspace]
   push:
     # `master` used to be listed here and this repository has never had one — its branches are
     # main, develop and workspace. A trigger naming a branch that does not exist is not an error
