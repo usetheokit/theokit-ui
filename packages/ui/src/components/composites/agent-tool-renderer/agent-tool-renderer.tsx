@@ -17,6 +17,13 @@ import { DataTable } from "@usetheo/ui";
  * (`@theokit/ui/sdk-tools-adapters`).
  */
 import type { JSX, ReactNode } from "react";
+import {
+  adaptApplyPatchResult,
+  adaptGitDiffResult,
+  adaptListDirResult,
+  adaptReadFileResult,
+  adaptShellResult,
+} from "../../../lib/sdk-tools-adapters/sdk-tools-adapters.js";
 import type { ToolUIPart } from "../../../types/chat.js";
 import { CreatedFilesCard } from "../../primitives/created-files-card/index.js";
 import { type DiffHunk, DiffViewer } from "../../primitives/diff-viewer/index.js";
@@ -52,14 +59,31 @@ const KIND_HINTS: ReadonlyArray<[ToolRendererKind, readonly string[]]> = [
   ["code", ["read_file", "cat_file", "code", "read"]],
 ];
 
+const EXACT_KINDS: Readonly<Record<string, ToolRendererKind>> = {
+  shell_exec: "terminal",
+  shell: "terminal",
+  git_diff: "diff",
+  apply_patch: "diff",
+  read_file: "code",
+  list_dir: "data-table",
+};
+
+function matchesHint(name: string, hint: string): boolean {
+  const h = hint.replace(/_$/, "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`(^|[_.-])${h}($|[_.-])`).test(name);
+}
+
 /**
- * Default classifier — a name-substring heuristic. Only affects the default;
- * fully overridable per call (ADR D1/D2). Never throws; unmapped → `undefined`.
+ * Default classifier — an exact-name table, then name hints matched only on
+ * word boundaries (`_`, `-`, `.`, start, end). Fully overridable per call
+ * (ADR D1/D2). Never throws; unmapped → `undefined`.
  */
 export function defaultClassifyTool(part: ToolUIPart): ToolRendererKind | undefined {
   const name = deriveToolName(part).toLowerCase();
+  const exact = EXACT_KINDS[name];
+  if (exact) return exact;
   for (const [kind, hints] of KIND_HINTS) {
-    if (hints.some((h) => name.includes(h))) return kind;
+    if (hints.some((h) => matchesHint(name, h))) return kind;
   }
   return undefined;
 }
@@ -131,22 +155,44 @@ function renderDataTable(rows: Array<Record<string, unknown>>): JSX.Element {
 /* ─── default registry ───────────────────────────────────────────────── */
 
 export const defaultToolRegistry: ToolRendererRegistry = {
-  code: (part) => <CodeBlock code={stringify(part.output)} copyable />,
-  terminal: (part) => <TerminalPanel lines={toTerminalLines(part.output)} />,
-  diff: (part) =>
-    isStructuredDiff(part.output) ? (
+  code: (part) => {
+    const path =
+      isRecord(part.input) && typeof part.input.path === "string" ? part.input.path : undefined;
+    const adapted = adaptReadFileResult(part.output, path);
+    return adapted ? (
+      <CodeBlock code={adapted.code} language={adapted.language} copyable />
+    ) : (
+      <CodeBlock code={stringify(part.output)} copyable />
+    );
+  },
+  terminal: (part) => (
+    <TerminalPanel lines={adaptShellResult(part.output) ?? toTerminalLines(part.output)} />
+  ),
+  diff: (part) => {
+    const adapted = adaptGitDiffResult(part.output);
+    if (adapted) {
+      return <DiffViewer path={adapted.path} stats={adapted.stats} hunks={adapted.hunks} />;
+    }
+    return isStructuredDiff(part.output) ? (
       <DiffViewer path={part.output.path} stats={part.output.stats} hunks={part.output.hunks} />
     ) : (
       <ToolCallPart part={part} />
-    ),
-  "created-files": (part) =>
-    isStructuredFiles(part.output) ? (
+    );
+  },
+  "created-files": (part) => {
+    const adapted = adaptApplyPatchResult(part.output);
+    if (adapted) return <CreatedFilesCard files={adapted.files} />;
+    return isStructuredFiles(part.output) ? (
       <CreatedFilesCard files={part.output.files} title={part.output.title} />
     ) : (
       <ToolCallPart part={part} />
-    ),
-  "data-table": (part) =>
-    isObjectRows(part.output) ? renderDataTable(part.output) : <ToolCallPart part={part} />,
+    );
+  },
+  "data-table": (part) => {
+    const adapted = adaptListDirResult(part.output);
+    if (adapted && adapted.rows.length > 0) return renderDataTable(adapted.rows);
+    return isObjectRows(part.output) ? renderDataTable(part.output) : <ToolCallPart part={part} />;
+  },
 };
 
 /* ─── component ──────────────────────────────────────────────────────── */

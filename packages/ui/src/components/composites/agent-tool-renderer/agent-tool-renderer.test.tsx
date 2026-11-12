@@ -240,3 +240,52 @@ describe("@theokit/ui/agent-tool-renderer subpath (M5-3 wiring)", () => {
     expect(mod.defaultToolRegistry).toBeTypeOf("object");
   });
 });
+
+describe("default registry adapters + word-boundary classify (#188)", () => {
+  const outPart = (toolName: string, output: unknown): ToolUIPart => ({
+    type: `tool-${toolName}`,
+    toolCallId: "x1",
+    toolName,
+    state: "output-available",
+    input: {},
+    output,
+  });
+  it("renders a shell_exec JSON string as terminal lines", () => {
+    const { container } = render(
+      <AgentToolRenderer
+        part={outPart("shell_exec", '{"ok":true,"stdout":"","stderr":"boom","exit_code":2}')}
+      />,
+    );
+    expect(screen.getByText("boom")).toBeInTheDocument();
+    expect(screen.getByText("exit 2")).toBeInTheDocument();
+    expect(container.textContent).not.toContain('"exit_code"');
+  });
+  it("renders a git_diff JSON string in DiffViewer", () => {
+    const diff = "diff --git a/a.ts b/a.ts\n--- a/a.ts\n+++ b/a.ts\n@@ -1,1 +1,1 @@\n-old\n+new\n";
+    const { container } = render(
+      <AgentToolRenderer part={outPart("git_diff", JSON.stringify({ ok: true, diff }))} />,
+    );
+    expect(container.querySelector('[data-slot="diff-viewer"]')).toBeInTheDocument();
+  });
+  it("renders read_file content and list_dir entries", () => {
+    render(
+      <AgentToolRenderer
+        part={outPart("read_file", JSON.stringify({ ok: true, content: "const zz = 1;" }))}
+      />,
+    );
+    expect(screen.getByText(/const zz/)).toBeInTheDocument();
+    const { container } = render(
+      <AgentToolRenderer
+        part={outPart(
+          "list_dir",
+          JSON.stringify({ ok: true, entries: [{ name: "a.ts", type: "file" }] }),
+        )}
+      />,
+    );
+    expect(container.textContent).toContain("a.ts");
+  });
+  it("does not classify by a hint inside a word", () => {
+    expect(defaultClassifyTool(toolPart("thread_summary"))).toBeUndefined();
+    expect(defaultClassifyTool(toolPart("execute_sql"))).toBeUndefined();
+  });
+});
