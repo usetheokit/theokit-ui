@@ -141,10 +141,14 @@ function failRunningTools(items: AgentStreamItem[]): AgentStreamItem[] {
   );
 }
 
+/** Internal action: an SDK message, or a reset to the empty state (new source). */
+export type AgentStreamAction = SdkStreamMessage | { readonly type: "reset" };
+
 export function agentStreamReducer(
   state: AgentStreamState,
-  msg: SdkStreamMessage,
+  msg: AgentStreamAction,
 ): AgentStreamState {
+  if (msg.type === "reset") return initialAgentStreamState;
   if (state.status === "done" || state.status === "error") return state;
   switch (msg.type) {
     case "thinking-delta":
