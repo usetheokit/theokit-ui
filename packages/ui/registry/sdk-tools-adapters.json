@@ -1,0 +1,24 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "sdk-tools-adapters",
+  "type": "registry:lib",
+  "title": "sdk-tools adapters",
+  "description": "Pure converters from sdk-tools results (JSON strings) into DiffViewer, TerminalPanel, CodeBlock, DataTable and CreatedFilesCard props.",
+  "registryDependencies": [
+    "created-files-card",
+    "diff-viewer",
+    "terminal-panel"
+  ],
+  "files": [
+    {
+      "path": "lib/sdk-tools-adapters/sdk-tools-adapters.ts",
+      "type": "registry:lib",
+      "target": "lib/sdk-tools-adapters/sdk-tools-adapters.ts"
+    },
+    {
+      "path": "lib/sdk-tools-adapters/index.ts",
+      "type": "registry:lib",
+      "target": "lib/sdk-tools-adapters/index.ts"
+    }
+  ]
+}

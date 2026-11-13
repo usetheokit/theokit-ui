@@ -240,3 +240,39 @@ describe("@theokit/ui/agent-tool-renderer subpath (M5-3 wiring)", () => {
     expect(mod.defaultToolRegistry).toBeTypeOf("object");
   });
 });
+
+describe("default registry adapts string wire output (#188)", () => {
+  it("shell_exec JSON string renders stderr and the exit line, not raw JSON", () => {
+    const out = '{"ok":true,"stdout":"","stderr":"boom","exit_code":2}';
+    const { container } = render(<AgentToolRenderer part={toolPart("shell_exec", out)} />);
+    expect(screen.getByText("boom")).toBeTruthy();
+    expect(screen.getByText("exit 2")).toBeTruthy();
+    expect(container.textContent).not.toContain('"exit_code"');
+  });
+  it("git_diff JSON string renders a DiffViewer", () => {
+    const diff = "@@ -1,1 +1,1 @@\n-old\n+new\n";
+    const { container } = render(
+      <AgentToolRenderer part={toolPart("git_diff", JSON.stringify({ ok: true, diff }))} />,
+    );
+    expect(container.querySelector('[data-slot="diff-viewer"]')).not.toBeNull();
+  });
+  it("read_file JSON string renders the file content", () => {
+    const { container } = render(
+      <AgentToolRenderer
+        part={toolPart("read_file", JSON.stringify({ ok: true, content: "const a = 1;" }))}
+      />,
+    );
+    expect(container.textContent).toContain("const a = 1;");
+    expect(container.textContent).not.toContain('"content"');
+  });
+  it("list_dir JSON string renders a table", () => {
+    const out = JSON.stringify({ ok: true, entries: [{ name: "a.ts", type: "file" }] });
+    const { container } = render(<AgentToolRenderer part={toolPart("list_dir", out)} />);
+    expect(container.textContent).toContain("a.ts");
+    expect(container.textContent).not.toContain('"entries"');
+  });
+  it("does not classify by a hint inside a word", () => {
+    expect(defaultClassifyTool(toolPart("thread_summary"))).toBeUndefined();
+    expect(defaultClassifyTool(toolPart("execute_sql"))).toBeUndefined();
+  });
+});
