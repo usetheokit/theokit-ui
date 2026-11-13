@@ -17,6 +17,13 @@ import { DataTable } from "@usetheo/ui";
  * (`@theokit/ui/sdk-tools-adapters`).
  */
 import type { JSX, ReactNode } from "react";
+import {
+  adaptApplyPatchResult,
+  adaptGitDiffResult,
+  adaptListDirResult,
+  adaptReadFileResult,
+  adaptShellResult,
+} from "../../../lib/sdk-tools-adapters/index.js";
 import type { ToolUIPart } from "../../../types/chat.js";
 import { CreatedFilesCard } from "../../primitives/created-files-card/index.js";
 import { type DiffHunk, DiffViewer } from "../../primitives/diff-viewer/index.js";
@@ -43,23 +50,49 @@ function deriveToolName(part: ToolUIPart): string {
   return part.type.slice("tool-".length);
 }
 
-// Substring heuristics over the tool name. Ordered: most specific first.
+// Exact tool names of the framework's own tools win over the hints.
+const EXACT_KINDS: Readonly<Record<string, ToolRendererKind>> = {
+  shell_exec: "terminal",
+  shell: "terminal",
+  git_diff: "diff",
+  apply_patch: "diff",
+  read_file: "code",
+  list_dir: "data-table",
+};
+
+// Word hints over the tool name. Ordered: most specific first.
 const KIND_HINTS: ReadonlyArray<[ToolRendererKind, readonly string[]]> = [
   ["diff", ["diff", "patch"]],
   ["created-files", ["edit_file", "write_file", "create_file", "created_file"]],
-  ["terminal", ["shell", "bash", "exec", "run_", "command", "vitest", "pytest"]],
-  ["data-table", ["list_dir", "glob", "list_", "search", "grep", "find"]],
+  ["terminal", ["shell", "bash", "exec", "run", "command", "vitest", "pytest"]],
+  ["data-table", ["list_dir", "glob", "list", "search", "grep", "find"]],
   ["code", ["read_file", "cat_file", "code", "read"]],
 ];
 
+/** True when `hint` occurs in `name` delimited by start/end or `_`, `-`, `.`. */
+function hasWord(name: string, hint: string): boolean {
+  let from = name.indexOf(hint);
+  while (from !== -1) {
+    const before = from === 0 || /[_.-]/.test(name[from - 1] ?? "");
+    const end = from + hint.length;
+    const after = end === name.length || /[_.-]/.test(name[end] ?? "");
+    if (before && after) return true;
+    from = name.indexOf(hint, from + 1);
+  }
+  return false;
+}
+
 /**
- * Default classifier — a name-substring heuristic. Only affects the default;
- * fully overridable per call (ADR D1/D2). Never throws; unmapped → `undefined`.
+ * Default classifier — an exact-name table, then word-boundary hints over the
+ * tool name. Only affects the default; fully overridable per call (ADR D1/D2).
+ * Never throws; unmapped → `undefined`.
  */
 export function defaultClassifyTool(part: ToolUIPart): ToolRendererKind | undefined {
   const name = deriveToolName(part).toLowerCase();
+  const exact = EXACT_KINDS[name];
+  if (exact) return exact;
   for (const [kind, hints] of KIND_HINTS) {
-    if (hints.some((h) => name.includes(h))) return kind;
+    if (hints.some((h) => hasWord(name, h))) return kind;
   }
   return undefined;
 }
@@ -130,23 +163,53 @@ function renderDataTable(rows: Array<Record<string, unknown>>): JSX.Element {
 
 /* ─── default registry ───────────────────────────────────────────────── */
 
+/** The path argument of a tool call, when its input carries one. */
+function inputPath(part: ToolUIPart): string | undefined {
+  const input = part.input;
+  if (!isRecord(input)) return undefined;
+  const p = input.path ?? input.file_path;
+  return typeof p === "string" ? p : undefined;
+}
+
+// Each renderer first tries the sdk-tools adapter on the (string) wire output,
+// then falls back to the structured / generic behaviour.
 export const defaultToolRegistry: ToolRendererRegistry = {
-  code: (part) => <CodeBlock code={stringify(part.output)} copyable />,
-  terminal: (part) => <TerminalPanel lines={toTerminalLines(part.output)} />,
-  diff: (part) =>
-    isStructuredDiff(part.output) ? (
+  code: (part) => {
+    const adapted = adaptReadFileResult(part.output, inputPath(part));
+    return adapted ? (
+      <CodeBlock code={adapted.code} language={adapted.language} copyable />
+    ) : (
+      <CodeBlock code={stringify(part.output)} copyable />
+    );
+  },
+  terminal: (part) => (
+    <TerminalPanel lines={adaptShellResult(part.output) ?? toTerminalLines(part.output)} />
+  ),
+  diff: (part) => {
+    const adapted = adaptGitDiffResult(part.output, inputPath(part));
+    if (adapted) {
+      return <DiffViewer path={adapted.path} stats={adapted.stats} hunks={adapted.hunks} />;
+    }
+    return isStructuredDiff(part.output) ? (
       <DiffViewer path={part.output.path} stats={part.output.stats} hunks={part.output.hunks} />
     ) : (
       <ToolCallPart part={part} />
-    ),
-  "created-files": (part) =>
-    isStructuredFiles(part.output) ? (
+    );
+  },
+  "created-files": (part) => {
+    const adapted = adaptApplyPatchResult(part.output);
+    if (adapted) return <CreatedFilesCard files={adapted.files} />;
+    return isStructuredFiles(part.output) ? (
       <CreatedFilesCard files={part.output.files} title={part.output.title} />
     ) : (
       <ToolCallPart part={part} />
-    ),
-  "data-table": (part) =>
-    isObjectRows(part.output) ? renderDataTable(part.output) : <ToolCallPart part={part} />,
+    );
+  },
+  "data-table": (part) => {
+    const adapted = adaptListDirResult(part.output);
+    if (adapted && adapted.rows.length > 0) return renderDataTable(adapted.rows);
+    return isObjectRows(part.output) ? renderDataTable(part.output) : <ToolCallPart part={part} />;
+  },
 };
 
 /* ─── component ──────────────────────────────────────────────────────── */
