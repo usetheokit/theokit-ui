@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.14.1
+
+### Patch Changes
+
+- 9ad14ca: `parseUnifiedDiffToHunks` reads `@@` hunk offsets, shows git header lines as meta, and ignores the trailing newline.
+- 9db4f45: `useAgentStream` resets to an empty state when its source changes, and accepts a `() => AsyncIterable` factory so each mount opens its own iterator and survives React StrictMode's double mount.
+
 ## 1.14.0
 
 ### Minor Changes
