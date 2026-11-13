@@ -45,14 +45,29 @@ interface DiffViewerProps extends HTMLAttributes<HTMLDivElement> {
 /**
  * parseUnifiedDiffToHunks — turn a unified diff string into `DiffHunk[]`.
  *
- * `@@` starts a new hunk (kept as its `header`); `+`/`-` become added/removed lines with
- * running new/old line numbers; `+++`/`---` file headers become `meta` lines; everything
- * else is an unchanged context line. Line numbers are best-effort running counters (they do
- * not read the `@@ -a,b +c,d @@` offsets) — enough for display.
+ * `@@` starts a new hunk (kept as its `header`) and its `@@ -a,b +c,d @@` offsets seed the
+ * old/new line numbers (`a` and `c`); `+`/`-` become added/removed lines with running numbers.
+ * Before the first hunk header, git header lines (`diff --git`, `index`, mode/rename/similarity
+ * lines, `---`, `+++`) become `meta` lines; `+++`/`---` stay `meta` inside a hunk. Everything
+ * else is an unchanged context line. A trailing newline and `\ No newline at end of file` are
+ * ignored. Input with no `@@` header numbers lines from 1.
  */
+const HUNK_HEADER = /^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/;
+const GIT_HEADER_PREFIXES = [
+  "diff --git",
+  "index ",
+  "new file mode",
+  "deleted file mode",
+  "similarity",
+  "rename ",
+  "---",
+  "+++",
+];
+
 export function parseUnifiedDiffToHunks(diff: string): DiffHunk[] {
   const hunks: DiffHunk[] = [];
   let current: DiffHunk | null = null;
+  let seenHunk = false;
   let oldNumber = 1;
   let newNumber = 1;
   const ensureHunk = (): DiffHunk => {
@@ -62,13 +77,26 @@ export function parseUnifiedDiffToHunks(diff: string): DiffHunk[] {
     }
     return current;
   };
-  for (const line of diff.split("\n")) {
+  const rows = diff.split("\n");
+  if (rows[rows.length - 1] === "") rows.pop();
+  for (const line of rows) {
     if (line.startsWith("@@")) {
+      seenHunk = true;
       current = { id: String(hunks.length), header: line, lines: [] };
       hunks.push(current);
+      const m = HUNK_HEADER.exec(line);
+      if (m) {
+        oldNumber = Number(m[1]);
+        newNumber = Number(m[2]);
+      }
       continue;
     }
-    if (line.startsWith("+++") || line.startsWith("---")) {
+    if (line.startsWith("\\")) continue;
+    if (
+      line.startsWith("+++") ||
+      line.startsWith("---") ||
+      (!seenHunk && GIT_HEADER_PREFIXES.some((p) => line.startsWith(p)))
+    ) {
       ensureHunk().lines.push({ kind: "meta", content: line });
       continue;
     }
