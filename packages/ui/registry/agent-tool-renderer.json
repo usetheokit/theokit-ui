@@ -15,6 +15,7 @@
     "https://usetheodev.github.io/usetheo-ui/r/data-table.json",
     "created-files-card",
     "diff-viewer",
+    "sdk-tools-adapters",
     "terminal-panel",
     "tailwind-preset"
   ],
