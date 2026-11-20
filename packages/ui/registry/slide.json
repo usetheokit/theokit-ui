@@ -20,7 +20,8 @@
     "zod"
   ],
   "registryDependencies": [
-    "tailwind-preset"
+    "tailwind-preset",
+    "safe-href"
   ],
   "files": [
     {

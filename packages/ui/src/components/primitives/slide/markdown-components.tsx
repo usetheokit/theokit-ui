@@ -34,6 +34,8 @@ function isExternal(href: string | undefined): boolean {
   if (href === undefined || href === "") return false;
   // Fragment and relative links stay in this document. A default that fired on `#section` would be
   // noise, and a noisy default is one consumers replace wholesale rather than extend.
+  // `//host/x` is protocol-relative: it starts with "/" but names another origin.
+  if (href.startsWith("//")) return true;
   if (href.startsWith("#") || href.startsWith("/") || href.startsWith("./")) return false;
   return /^[a-z][a-z0-9+.-]*:/i.test(href);
 }
