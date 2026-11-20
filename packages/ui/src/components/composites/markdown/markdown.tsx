@@ -18,7 +18,7 @@ import { cn } from "../../../lib/cn.js";
 import { CodeBlock } from "../../../lib/markdown/code-block.js";
 import { InlineCode } from "../../../lib/markdown/inline-code.js";
 import { parseMarkdownToReactSafe } from "../../../lib/markdown/parser.js";
-import { slideMarkdownComponents } from "../../primitives/slide/markdown-components.js";
+import { slideMarkdownComponents } from "../../primitives/slide/index.js";
 
 export interface MarkdownProps
   extends Omit<ComponentPropsWithoutRef<"div">, "children" | "className"> {

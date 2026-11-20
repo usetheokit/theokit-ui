@@ -8,7 +8,7 @@
 
 # The UI your agent already needs.
 
-A React component library built for AI-agent surfaces — coding agents and chat. **103 components** designed for what you'd otherwise build from scratch. The visual surface verb of **Chat. Build. Deploy.**
+A React component library built for AI-agent surfaces — coding agents and chat. **104 components** designed for what you'd otherwise build from scratch. The visual surface verb of **Chat. Build. Deploy.**
 
 *Editorial typography. Three runtime-swappable themes. shadcn-compatible registry. Apache-2.0.*
 
@@ -56,7 +56,7 @@ The agent UI gap is real — most teams reach for shadcn for the primitives and 
 | ESM-only, tree-shake via barrel | **Yes** | Yes | Yes | DIY |
 | a11y enforced as a quality gate | **Yes** — axe over every story, plus a gate-enforced floor of 30 interactive primitives | Per-component, manual | Manual | Often skipped |
 
-Same Radix UI underneath as shadcn — no philosophy fight. We just shipped the next 103 components you were about to write.
+Same Radix UI underneath as shadcn — no philosophy fight. We just shipped the next 104 components you were about to write.
 
 ## What you'd build
 
