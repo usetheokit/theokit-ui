@@ -121,14 +121,17 @@ export const Slide: FC<SlideProps> = ({
   minScale,
   maxScale,
   onValidationError,
-  // #154 — markdown gets this package's defaults unless the consumer decides otherwise. A default
-  // and never a merge: a consumer passing `components` is making a decision, and merging ours over
-  // theirs would make the default a ceiling instead of a floor.
-  components = slideMarkdownComponents,
+  // #154 — markdown gets this package's defaults for every element the consumer did not override.
+  // Consumer entries come last so theirs win: the default is a floor, not a ceiling.
+  components: consumerComponents,
   plugins,
   className,
   "aria-label": ariaLabel = "Slide",
 }) => {
+  const components = useMemo(
+    () => ({ ...slideMarkdownComponents, ...consumerComponents }),
+    [consumerComponents],
+  );
   const containerRef = useRef<HTMLDivElement>(null);
   const canvas = useMemo(() => resolveCanvas(aspectRatio), [aspectRatio]);
   const scale = useSlideFit(containerRef, canvas.width, canvas.height, {

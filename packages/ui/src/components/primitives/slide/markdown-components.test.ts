@@ -89,7 +89,7 @@ describe("the default map reaches Slide (#154)", () => {
     const source = readFileSync(join(here, "slide.tsx"), "utf8");
 
     expect(
-      /components\s*=\s*slideMarkdownComponents/.test(source),
+      /\.\.\.slideMarkdownComponents\s*,\s*\.\.\.consumerComponents/.test(source),
       "Slide does not default `components`, so the map is unreachable from the public API and " +
         "markdown still renders bare tags. A default nobody applies is the orphan-export defect " +
         "under another name.",
@@ -122,11 +122,16 @@ describe("the default map reaches Slide (#154)", () => {
    */
   function defaultIsAFloorNotACeiling(source: string): boolean {
     // The default must reach `parseSlide` at all …
-    if (!/components\s*=\s*slideMarkdownComponents/.test(source)) return false;
+    if (!/\.\.\.slideMarkdownComponents\s*,\s*\.\.\.consumerComponents/.test(source)) return false;
     // … and where a merge exists, the CONSUMER's entries must come last so theirs win.
     const ceiling = /\{\s*\.\.\.components\s*,\s*\.\.\.slideMarkdownComponents\s*\}/;
     return !ceiling.test(source);
   }
+
+  it("test_protocol_relative_links_are_external", () => {
+    const el = slideMarkdownComponents.a?.({ href: "//elsewhere.test/x", children: "go" });
+    expect(el?.props.rel).toBe("noopener noreferrer");
+  });
 
   it("test_a_consumer_map_still_wins", () => {
     const here = dirname(fileURLToPath(import.meta.url));
@@ -138,7 +143,7 @@ describe("the default map reaches Slide (#154)", () => {
   });
 
   it("test_the_guard_rejects_a_ceiling_and_accepts_a_floor", () => {
-    const base = "const x = { components = slideMarkdownComponents };";
+    const base = "const x = { ...slideMarkdownComponents, ...consumerComponents };";
     // The shape the guard exists to forbid: defaults last, so they override the consumer.
     expect(
       defaultIsAFloorNotACeiling(
