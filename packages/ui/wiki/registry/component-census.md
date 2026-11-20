@@ -44,11 +44,11 @@ A component is a primitive or a composite by the
 <!-- END:primitives-list -->
 
 <!-- BEGIN:composites-census -->
-### Composites (40)
+### Composites (41)
 <!-- END:composites-census -->
 
 <!-- BEGIN:composites-list -->
-`AgentComposer`, `AgentEditor`, `AgentStream`, `AgentTimeline`, `AgentToolRenderer`, `ApprovalCard`, `ChatComposer`, `ChatMessage`, `ChatMessageAction`, `ChatMessageActions`, `ChatMessageBranch`, `ChatMessageBranchContent`, `ChatMessageBranchNext`, `ChatMessageBranchPage`, `ChatMessageBranchPrevious`, `ChatMessageBranchSelector`, `ChatMessageContent`, `ChatMessageResponse`, `ChatMessageRoot`, `ChatMessageToolbar`, `ChoicePrompt`, `ConfirmPrompt`, `CronJobsList`, `DataPart`, `FilePart`, `MCPServerList`, `MultiSelectPrompt`, `PermissionModal`, `PreviewPanel`, `ReasoningPart`, `RuleEditor`, `SkillEditor`, `SkillsList`, `SourceDocumentPart`, `SourceUrlPart`, `StabilityBundleViewer`, `TextPart`, `TextPrompt`, `ToolCallPart`, `UsageMeter`
+`AgentComposer`, `AgentEditor`, `AgentStream`, `AgentTimeline`, `AgentToolRenderer`, `ApprovalCard`, `ChatComposer`, `ChatMessage`, `ChatMessageAction`, `ChatMessageActions`, `ChatMessageBranch`, `ChatMessageBranchContent`, `ChatMessageBranchNext`, `ChatMessageBranchPage`, `ChatMessageBranchPrevious`, `ChatMessageBranchSelector`, `ChatMessageContent`, `ChatMessageResponse`, `ChatMessageRoot`, `ChatMessageToolbar`, `ChoicePrompt`, `ConfirmPrompt`, `CronJobsList`, `DataPart`, `FilePart`, `MCPServerList`, `Markdown`, `MultiSelectPrompt`, `PermissionModal`, `PreviewPanel`, `ReasoningPart`, `RuleEditor`, `SkillEditor`, `SkillsList`, `SourceDocumentPart`, `SourceUrlPart`, `StabilityBundleViewer`, `TextPart`, `TextPrompt`, `ToolCallPart`, `UsageMeter`
 <!-- END:composites-list -->
 
 # Why export counts differ from folder counts

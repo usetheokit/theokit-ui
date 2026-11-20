@@ -1,0 +1,63 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "markdown",
+  "type": "registry:ui",
+  "title": "Markdown",
+  "description": "Sanitized GFM markdown renderer for untrusted text, with an allowedProtocols list for href and src.",
+  "dependencies": [
+    "lucide-react",
+    "hast",
+    "mdast"
+  ],
+  "registryDependencies": [
+    "cn",
+    "tailwind-preset"
+  ],
+  "files": [
+    {
+      "path": "components/composites/markdown/markdown.tsx",
+      "type": "registry:ui",
+      "target": "components/ui/markdown.tsx"
+    },
+    {
+      "path": "components/composites/markdown/index.ts",
+      "type": "registry:ui",
+      "target": "components/ui/markdown/index.ts"
+    },
+    {
+      "path": "lib/markdown/parser.ts",
+      "type": "registry:lib",
+      "target": "lib/markdown/parser.ts"
+    },
+    {
+      "path": "lib/markdown/streaming-preprocess.ts",
+      "type": "registry:lib",
+      "target": "lib/markdown/streaming-preprocess.ts"
+    },
+    {
+      "path": "lib/markdown/code-block.tsx",
+      "type": "registry:lib",
+      "target": "lib/markdown/code-block.tsx"
+    },
+    {
+      "path": "lib/markdown/inline-code.tsx",
+      "type": "registry:lib",
+      "target": "lib/markdown/inline-code.tsx"
+    },
+    {
+      "path": "lib/markdown/math.tsx",
+      "type": "registry:lib",
+      "target": "lib/markdown/math.tsx"
+    },
+    {
+      "path": "lib/markdown/mermaid.tsx",
+      "type": "registry:lib",
+      "target": "lib/markdown/mermaid.tsx"
+    },
+    {
+      "path": "components/primitives/slide/markdown-components.tsx",
+      "type": "registry:lib",
+      "target": "lib/markdown/element-defaults.tsx"
+    }
+  ]
+}

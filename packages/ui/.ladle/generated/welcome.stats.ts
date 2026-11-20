@@ -20,10 +20,10 @@ export interface WelcomeStats {
 
 export const STATS: WelcomeStats = {
   primitives: 63,
-  composites: 40,
-  components: 103,
+  composites: 41,
+  components: 104,
   themes: 3,
   screens: 7,
-  registryItems: 100,
-  tests: 1744,
+  registryItems: 102,
+  tests: 1781,
 };

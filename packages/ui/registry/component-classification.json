@@ -219,6 +219,13 @@
     "rationale": "AI-agent surface vocabulary (Blueprint §Q2) — stays in @theokit/ui"
   },
   {
+    "name": "markdown",
+    "layer": "composite",
+    "tier": "ai",
+    "target": "@theokit/ui",
+    "rationale": "AI-agent surface vocabulary (Blueprint §Q2) — stays in @theokit/ui"
+  },
+  {
     "name": "memory-editor",
     "layer": "primitive",
     "tier": "ai",

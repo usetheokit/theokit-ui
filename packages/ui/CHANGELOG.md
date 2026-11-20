@@ -630,6 +630,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- `Markdown` and `MarkdownProps`: a neutral, sanitized GFM markdown component for untrusted text, with an `allowedProtocols` list that sets which URL schemes survive on `href` and `src` (relative URLs and `#` anchors are always kept). `ChatMessageResponse` now renders it, with the same props and output (usetheokit/theokit-ui#185)
+
 ### Fixed
 
 - The default tool registry (behind `ChatMessage`) parses the string results of `shell_exec`, `git_diff`, `read_file`, `list_dir` and `apply_patch` with the sdk-tools adapters, so they render as terminal lines with `exit N`, a `DiffViewer`, a `CodeBlock` and a `DataTable` instead of raw JSON. `defaultClassifyTool` matches exact tool names first and hints only on word boundaries, so `thread_summary` and `execute_sql` are no longer treated as code or terminal (usetheokit/theokit-ui#188)
