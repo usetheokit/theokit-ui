@@ -128,6 +128,11 @@ describe("the default map reaches Slide (#154)", () => {
     return !ceiling.test(source);
   }
 
+  it("test_protocol_relative_links_are_external", () => {
+    const el = slideMarkdownComponents.a?.({ href: "//elsewhere.test/x", children: "go" });
+    expect(el?.props.rel).toBe("noopener noreferrer");
+  });
+
   it("test_a_consumer_map_still_wins", () => {
     const here = dirname(fileURLToPath(import.meta.url));
     const source = readFileSync(join(here, "slide.tsx"), "utf8");
