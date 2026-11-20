@@ -135,9 +135,15 @@ export function Markdown({
       isStreaming,
       components: MARKDOWN_COMPONENTS,
       allowedProtocols,
-    }).then((next) => {
-      if (!cancelled) setTree(next);
-    });
+    }).then(
+      (next) => {
+        if (!cancelled) setTree(next);
+      },
+      () => {
+        // The safe parser already catches parse errors; this covers an unexpected rejection.
+        if (!cancelled) setTree(<p>{source}</p>);
+      },
+    );
     return () => {
       cancelled = true;
     };

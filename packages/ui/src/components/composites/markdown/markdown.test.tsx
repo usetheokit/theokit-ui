@@ -1,5 +1,5 @@
 import { render, waitFor } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { Markdown } from "./markdown.js";
 
 describe("<Markdown>", () => {
@@ -50,5 +50,15 @@ describe("<Markdown>", () => {
     expect(container.querySelector('a[href="http://e.com"]')).toBeNull();
     rerender(<Markdown source={src} allowedProtocols={["http", "https"]} />);
     await waitFor(() => expect(container.querySelector('a[href="http://e.com"]')).not.toBeNull());
+  });
+
+  it("falls back to plain text when the parser rejects", async () => {
+    const parser = await import("../../../lib/markdown/parser.js");
+    const spy = vi
+      .spyOn(parser, "parseMarkdownToReactSafe")
+      .mockRejectedValueOnce(new Error("boom"));
+    const { container } = render(<Markdown source="**raw**" />);
+    await waitFor(() => expect(container.textContent).toContain("**raw**"));
+    spy.mockRestore();
   });
 });
