@@ -1,7 +1,3 @@
-import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
-
 import { act } from "react";
 import { hydrateRoot } from "react-dom/client";
 import { renderToString } from "react-dom/server";
@@ -153,40 +149,55 @@ describe("ThemeSwitcher hydrates without a mismatch (#155)", () => {
 });
 
 describe("the announcement does not depend on what only the client knows (#155)", () => {
-  /**
-   * The structural half, and the one the runtime tests above cannot reach.
-   *
-   * `ThemeSwitcher` renders `mode` as TEXT in an `aria-live` region. `mode` is resolved by
-   * `ThemeProvider` from `localStorage` and `prefers-color-scheme` in a `useEffect`
-   * (`theme-provider.tsx:500`) — i.e. AFTER hydration. The server cannot know either value; that is
-   * not a bug in the provider, it is what a server is.
-   *
-   * So a text node whose content is `mode` is a hydration mismatch by construction whenever the
-   * client resolves to something other than `defaultMode`. The runtime tests above pin
-   * `matchMedia` before BOTH renders, which makes server and client agree — they prove the tree
-   * hydrates, and they cannot prove this, because the divergence needs the two halves to disagree
-   * and a fixed stub makes them agree.
-   *
-   * This asserts on the SOURCE instead. The property is "no client-only value is rendered as text",
-   * and it stays true no matter which stub a future test installs.
-   */
-  it("test_mode_is_not_rendered_as_a_text_node", () => {
-    const here = dirname(fileURLToPath(import.meta.url));
-    const source = readFileSync(join(here, "theme-switcher.tsx"), "utf8");
-
-    // `{mode}` inside JSX children — not in an attribute, where a mismatch costs nothing visible
-    // and React does not report #418.
-    const asText = /(?<!=\{)\{\s*mode\s*\}(?![^<>]*=)/.test(
-      source.replace(/`[^`]*`/g, ""), // template literals are attribute values here
+  // Server and client genuinely disagree: the server has no storage and renders `defaultMode`
+  // (dark); the client reads a stored `light` after mount. Behavioural, not a source-text check.
+  function hydrateDivergent() {
+    pinSystemPreference(false);
+    const html = renderToString(
+      <ThemeProvider themes={builtinThemes}>
+        <ThemeSwitcher />
+      </ThemeProvider>,
     );
+    window.localStorage.setItem("theo-ui:theme:mode", "light");
+    const container = document.createElement("div");
+    container.innerHTML = html;
+    document.body.appendChild(container);
+    const liveBefore = container.querySelector('[aria-live="polite"]');
+    hydrateInto(
+      container,
+      <ThemeProvider themes={builtinThemes}>
+        <ThemeSwitcher />
+      </ThemeProvider>,
+    );
+    return { container, html, liveBefore };
+  }
 
-    expect(
-      asText,
-      "`mode` is rendered as a text node. It is resolved after hydration from localStorage and " +
-        "prefers-color-scheme, so the server renders the default and the client may render " +
-        "something else — React #418, on every SSR page that mounts this. An aria-live region is " +
-        "announced when it CHANGES, so rendering it empty on the server and filling it on the " +
-        "client is not a loss: it is what a live region is for.",
-    ).toBe(false);
+  it("test_server_renders_an_empty_live_region", () => {
+    const { html } = hydrateDivergent();
+    expect(html).toMatch(/<span aria-live="polite" aria-atomic="true" class="sr-only"><\/span>/);
+  });
+
+  it("test_divergent_client_mode_hydrates_without_error_and_keeps_server_nodes", () => {
+    const { container, liveBefore } = hydrateDivergent();
+    expect(CAPTURED.map((e) => e.message)).toEqual([]);
+    // Same DOM node survives: the server markup was not discarded and rebuilt.
+    expect(container.querySelector('[aria-live="polite"]')).toBe(liveBefore);
+  });
+
+  it("test_live_region_announces_the_resolved_mode_after_mount", () => {
+    const { container } = hydrateDivergent();
+    const live = container.querySelector('[aria-live="polite"]');
+    expect(live?.textContent).toMatch(/mode: light/);
+  });
+
+  it("test_live_region_updates_when_the_user_toggles_mode", () => {
+    const { container } = hydrateDivergent();
+    const toggle = container.querySelector<HTMLButtonElement>(
+      'button[aria-label^="Switch to"]',
+    ) as HTMLButtonElement;
+    act(() => {
+      toggle.click();
+    });
+    expect(container.querySelector('[aria-live="polite"]')?.textContent).toMatch(/mode: dark/);
   });
 });
