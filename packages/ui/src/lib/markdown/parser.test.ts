@@ -110,3 +110,23 @@ describe("parseMarkdownToReactSafe — fallback path", () => {
     expect(html).toContain("<strong>world</strong>");
   });
 });
+
+describe("parseMarkdownToReact — allowedProtocols", () => {
+  it("keeps the sanitizer defaults when omitted", async () => {
+    const html = await renderMarkdown("[a](http://e.com) [m](mailto:a@b.c)");
+    expect(html).toContain('href="http://e.com"');
+    expect(html).toContain('href="mailto:a@b.c"');
+  });
+
+  it("restricts href and src to the list, keeping relative URLs and anchors", async () => {
+    const html = await renderMarkdown(
+      "[a](http://e.com) [b](https://e.com) [c](/docs) [d](#top) ![i](http://e.com/i.png)",
+      { allowedProtocols: ["https"] },
+    );
+    expect(html).not.toContain('href="http://e.com"');
+    expect(html).not.toContain('src="http://e.com/i.png"');
+    expect(html).toContain('href="https://e.com"');
+    expect(html).toContain('href="/docs"');
+    expect(html).toContain('href="#top"');
+  });
+});

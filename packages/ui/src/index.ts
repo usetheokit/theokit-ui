@@ -582,6 +582,9 @@ export {
   type SdkStreamMessage,
 } from "./hooks/use-agent-stream/index.js";
 
+// Markdown composite
+export { Markdown, type MarkdownProps } from "./components/composites/markdown/index.js";
+
 // Permission & approval composites
 export { PermissionModal } from "./components/composites/permission-modal/index.js";
 

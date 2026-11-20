@@ -179,7 +179,7 @@ describe("loadAndCheck (I/O input guards)", () => {
   it("passes_against_the_real_authored_manifest", async () => {
     const r = await loadAndCheck();
     expect(r.ok).toBe(true);
-    expect(r.classifiedCount).toBe(86);
+    expect(r.classifiedCount).toBe(87);
   });
 });
 
@@ -212,10 +212,10 @@ describe("component-classification.json (authored manifest — T1.2)", () => {
   const manifest = JSON.parse(readFileSync(manifestPath, "utf-8")) as ClassificationEntry[];
   const byName = new Map(manifest.map((e) => [e.name, e]));
 
-  it("manifest_has_86_entries_all_ai", () => {
+  it("manifest_has_87_entries_all_ai", () => {
     // Post-M-C: theo-ui is AI-exclusive — the 54 non-AI moved to @usetheo/ui.
-    // M2 (2026-07-16): +4 code-agent Builder-parity primitives (82 → 86).
-    expect(manifest.length).toBe(86);
+    // M2 (2026-07-16): +4 code-agent Builder-parity primitives (82 → 86); +1 composite `markdown` (86 → 87).
+    expect(manifest.length).toBe(87);
     for (const e of manifest) {
       expect(e.tier).toBe("ai");
       expect(e.target).toBe("@theokit/ui");
