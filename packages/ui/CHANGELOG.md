@@ -1,5 +1,40 @@
 # Changelog
 
+## 1.14.2
+
+### Patch Changes
+
+- e921a22: The default tool registry renders the string results of `shell_exec`, `git_diff`, `read_file`, `list_dir` and `apply_patch` through the sdk-tools adapters instead of raw JSON, and `defaultClassifyTool` matches exact names and whole-word hints, so `thread_summary` and `execute_sql` are no longer misclassified.
+
+## 1.14.1
+
+### Patch Changes
+
+- 9ad14ca: `parseUnifiedDiffToHunks` reads `@@` hunk offsets, shows git header lines as meta, and ignores the trailing newline.
+- 9db4f45: `useAgentStream` resets to an empty state when its source changes, and accepts a `() => AsyncIterable` factory so each mount opens its own iterator and survives React StrictMode's double mount.
+
+## 1.14.0
+
+### Minor Changes
+
+- 0884989: `ContextWindowBar` shows an unknown window (`total <= 0` or not finite) as "unknown" with a neutral tone instead of 100% or `NaN%`. The default `warnAt` is now 0.75 to match `contextPressure`. New props `pressure` and `estimated`.
+
+### Patch Changes
+
+- cd3eb9b: `AgentComposer` opens the command menu only for a `/` at the start of the first line, until the first whitespace, and Enter submits whenever the open menu has no matching item. A message with a path like `/tmp/out` can be sent, and `run /c` is no longer replaced by `/clear`. `@` and `#` mentions still work mid-sentence.
+
+## 1.13.1
+
+### Patch Changes
+
+- 079085a: `useAgentStream` now streams text from the SDK's `"text-delta"` event (`"text_delta"` still works). When a run ends with `done` or `error`, tools still running are marked failed and later events are ignored.
+
+## 1.13.0
+
+### Minor Changes
+
+- 9f78bca: Add an i18n layer so a surface can switch language. Wrap your app in `<I18nProvider locale="sv" catalogues={{ ... }}>` (built-in `en` and `sv` catalogues are merged with yours; `locale` defaults to `"en"`), then call `useI18n()` to get `{ locale, setLocale, t, formatNumber, formatDate }`. `t("chat.send", { name })` looks up a key and interpolates `{name}` placeholders, and `setLocale("sv")` switches language at runtime. Without a provider, `useI18n()` falls back to English. The `translate`, `formatNumber` and `formatDate` helpers, the `en`, `sv` and `defaultCatalogues` catalogues, and the `Messages`, `Catalogues`, `TranslateParams`, `I18n` and `I18nProviderProps` types are exported too.
+
 ## 1.12.2
 
 ### Patch Changes
