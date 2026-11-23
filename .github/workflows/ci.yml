@@ -2,7 +2,7 @@ name: CI
 
 on:
   pull_request:
-    branches: [main, develop, workspace]
+    branches: [main, develop]
   push:
     # `master` used to be listed here and this repository has never had one — its branches are
     # main, develop and workspace. A trigger naming a branch that does not exist is not an error
@@ -26,10 +26,15 @@ permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.ref }}
+  # Keyed on the repository and branch the commit comes from, so the push to develop and the
+  # develop -> main pull request of the same commit share one group and run one after the other (a
+  # fork's branch of the same name does not join it). Keyed on github.ref they ran side by side on the
+  # same runner class, one starved past its timeout, and its cancelled `CI` finished last and
+  # overwrote the green one on a required context (#160).
+  group: ci-${{ github.event.pull_request.head.repo.full_name || github.repository }}-${{ github.event.pull_request.head.ref || github.ref_name }}
   # A cancelled run on an integration branch leaves the commit with no verdict,
   # which reads the same as a passing one. Only supersede elsewhere.
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/develop' }}
+  cancel-in-progress: ${{ (github.event.pull_request.head.ref || github.ref_name) != 'main' && (github.event.pull_request.head.ref || github.ref_name) != 'develop' }}
 
 jobs:
   static:
@@ -67,7 +72,8 @@ jobs:
       contents: read
     name: Unit tests
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # Measured from 3m44s to 15m27s on the same content (#160): the ceiling sits above that spread.
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with: {persist-credentials: false}

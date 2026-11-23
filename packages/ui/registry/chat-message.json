@@ -6,8 +6,6 @@
   "description": "Composable chat-turn surface with Vercel AI SDK UIMessage parts API \u2014 markdown, code blocks, math, tool calls, reasoning, file attachments, source citations, branching navigation.",
   "dependencies": [
     "lucide-react",
-    "hast",
-    "mdast",
     "@usetheo/ui"
   ],
   "registryDependencies": [
@@ -16,6 +14,7 @@
     "safe-href",
     "https://usetheodev.github.io/usetheo-ui/r/button.json",
     "agent-tool-renderer",
+    "markdown",
     "tailwind-preset"
   ],
   "files": [
@@ -73,41 +72,6 @@
       "path": "components/composites/chat-message/index.ts",
       "type": "registry:ui",
       "target": "components/ui/chat-message/index.ts"
-    },
-    {
-      "path": "lib/markdown/parser.ts",
-      "type": "registry:lib",
-      "target": "lib/markdown/parser.ts"
-    },
-    {
-      "path": "lib/markdown/streaming-preprocess.ts",
-      "type": "registry:lib",
-      "target": "lib/markdown/streaming-preprocess.ts"
-    },
-    {
-      "path": "lib/markdown/code-block.tsx",
-      "type": "registry:lib",
-      "target": "lib/markdown/code-block.tsx"
-    },
-    {
-      "path": "lib/markdown/inline-code.tsx",
-      "type": "registry:lib",
-      "target": "lib/markdown/inline-code.tsx"
-    },
-    {
-      "path": "lib/markdown/math.tsx",
-      "type": "registry:lib",
-      "target": "lib/markdown/math.tsx"
-    },
-    {
-      "path": "lib/markdown/mermaid.tsx",
-      "type": "registry:lib",
-      "target": "lib/markdown/mermaid.tsx"
-    },
-    {
-      "path": "components/primitives/slide/markdown-components.tsx",
-      "type": "registry:lib",
-      "target": "lib/markdown/element-defaults.tsx"
     }
   ]
 }

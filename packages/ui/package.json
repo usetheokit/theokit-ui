@@ -203,6 +203,10 @@
       "types": "./dist/components/primitives/lane-board/index.d.ts",
       "import": "./dist/primitives/lane-board/index.js"
     },
+    "./markdown": {
+      "types": "./dist/components/composites/markdown/index.d.ts",
+      "import": "./dist/composites/markdown/index.js"
+    },
     "./mcp-server-card": {
       "types": "./dist/components/primitives/mcp-server-card/index.d.ts",
       "import": "./dist/primitives/mcp-server-card/index.js"

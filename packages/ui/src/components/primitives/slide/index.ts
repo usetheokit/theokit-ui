@@ -44,3 +44,4 @@ export {
   type PluginComposer,
 } from "./plugin.js";
 export { slideFrontmatterJsonSchema } from "./json-schema.js";
+export { slideMarkdownComponents } from "./markdown-components.js";

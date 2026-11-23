@@ -8,15 +8,15 @@
 
 # The UI your agent already needs.
 
-A React component library built for AI-agent surfaces — coding agents and chat. **103 components** designed for what you'd otherwise build from scratch. The visual surface verb of **Chat. Build. Deploy.**
+A React component library built for AI-agent surfaces — coding agents and chat. **104 components** designed for what you'd otherwise build from scratch. The visual surface verb of **Chat. Build. Deploy.**
 
 *Editorial typography. Three runtime-swappable themes. shadcn-compatible registry. Apache-2.0.*
 
 <!-- BEGIN:counts -->
 [![license](https://img.shields.io/badge/license-Apache--2.0-7C3AED?style=flat-square)](./LICENSE)
 [![react](https://img.shields.io/badge/react-18+-7C3AED?style=flat-square&logo=react&logoColor=white)](https://react.dev)
-[![tests](https://img.shields.io/badge/tests-1772%20passing-success?style=flat-square)](#quality-gates)
-[![components](https://img.shields.io/badge/components-103-7C3AED?style=flat-square)](#component-catalog)
+[![tests](https://img.shields.io/badge/tests-1781%20passing-success?style=flat-square)](#quality-gates)
+[![components](https://img.shields.io/badge/components-104-7C3AED?style=flat-square)](#component-catalog)
 [![shadcn](https://img.shields.io/badge/shadcn-compatible-000?style=flat-square)](https://ui.shadcn.com/docs/registry)
 <!-- END:counts -->
 
@@ -56,7 +56,7 @@ The agent UI gap is real — most teams reach for shadcn for the primitives and 
 | ESM-only, tree-shake via barrel | **Yes** | Yes | Yes | DIY |
 | a11y enforced as a quality gate | **Yes** — axe over every story, plus a gate-enforced floor of 30 interactive primitives | Per-component, manual | Manual | Often skipped |
 
-Same Radix UI underneath as shadcn — no philosophy fight. We just shipped the next 103 components you were about to write.
+Same Radix UI underneath as shadcn — no philosophy fight. We just shipped the next 104 components you were about to write.
 
 ## What you'd build
 
@@ -143,7 +143,7 @@ For AI coding assistants (Claude Code, Cursor, Codex), [`llms.txt`](./llms.txt) 
 ## Component catalog
 
 <!-- BEGIN:component-catalog-intro -->
-**103 components**, organized by mechanical rule: a *primitive* imports no other `@theokit/ui` component; a *composite* does.
+**104 components**, organized by mechanical rule: a *primitive* imports no other `@theokit/ui` component; a *composite* does.
 <!-- END:component-catalog-intro -->
 
 <details>
@@ -172,12 +172,12 @@ For AI coding assistants (Claude Code, Cursor, Codex), [`llms.txt`](./llms.txt) 
 <details>
 <summary>
 <!-- BEGIN:composites-count -->
-**Composites** (40) — assembled flows
+**Composites** (41) — assembled flows
 <!-- END:composites-count -->
 </summary>
 
 <!-- BEGIN:composites -->
-`AgentComposer` · `AgentEditor` · `AgentStream` · `AgentTimeline` · `AgentToolRenderer` · `ApprovalCard` · `ChatComposer` · `ChatMessage` · `ChatMessageAction` · `ChatMessageActions` · `ChatMessageBranch` · `ChatMessageBranchContent` · `ChatMessageBranchNext` · `ChatMessageBranchPage` · `ChatMessageBranchPrevious` · `ChatMessageBranchSelector` · `ChatMessageContent` · `ChatMessageResponse` · `ChatMessageRoot` · `ChatMessageToolbar` · `ChoicePrompt` · `ConfirmPrompt` · `CronJobsList` · `DataPart` · `FilePart` · `MCPServerList` · `MultiSelectPrompt` · `PermissionModal` · `PreviewPanel` · `ReasoningPart` · `RuleEditor` · `SkillEditor` · `SkillsList` · `SourceDocumentPart` · `SourceUrlPart` · `StabilityBundleViewer` · `TextPart` · `TextPrompt` · `ToolCallPart` · `UsageMeter`
+`AgentComposer` · `AgentEditor` · `AgentStream` · `AgentTimeline` · `AgentToolRenderer` · `ApprovalCard` · `ChatComposer` · `ChatMessage` · `ChatMessageAction` · `ChatMessageActions` · `ChatMessageBranch` · `ChatMessageBranchContent` · `ChatMessageBranchNext` · `ChatMessageBranchPage` · `ChatMessageBranchPrevious` · `ChatMessageBranchSelector` · `ChatMessageContent` · `ChatMessageResponse` · `ChatMessageRoot` · `ChatMessageToolbar` · `ChoicePrompt` · `ConfirmPrompt` · `CronJobsList` · `DataPart` · `FilePart` · `MCPServerList` · `Markdown` · `MultiSelectPrompt` · `PermissionModal` · `PreviewPanel` · `ReasoningPart` · `RuleEditor` · `SkillEditor` · `SkillsList` · `SourceDocumentPart` · `SourceUrlPart` · `StabilityBundleViewer` · `TextPart` · `TextPrompt` · `ToolCallPart` · `UsageMeter`
 <!-- END:composites -->
 
 </details>
@@ -373,7 +373,7 @@ tests/             fixture-shadcn-app/ (registry install integration test)
 Honest claims only.
 
 <!-- BEGIN:production-stats -->
-- **Production.** 103 components, 1772 tests passing, zero a11y violations across the axe sweep over every story, bundle size enforced. Quality gates run on every PR.
+- **Production.** 104 components, 1781 tests passing, zero a11y violations across the axe sweep over every story, bundle size enforced. Quality gates run on every PR.
 <!-- END:production-stats -->
 - **Registry distribution.** Served at [`https://usetheokit.github.io/theokit-ui/r/`](https://usetheokit.github.io/theokit-ui/r/) (GitHub Pages, auto-deploy on every push to `main`). The branded `https://ui.usetheo.dev/r/` URL is a single DNS CNAME away — point `ui.usetheo.dev` at `usetheodev.github.io` and add it as a custom domain in Pages settings.
 - **ESM-only.** Modern bundlers only. Consumers on CommonJS Node need to transpile or use a bundler.

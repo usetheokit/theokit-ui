@@ -11,6 +11,11 @@
  *     blockquote, code, pre, a[href], img[src/alt], table family, em, strong,
  *     del, br, hr, etc.).
  *
+ * The allow-list only decides what an `a` / `img` MAY carry. The defaults that markdown links and
+ * images get (`rel="noopener noreferrer"` on external links, lazy/async images) are applied at
+ * render time by `markdown-components.tsx`, because the sanitizer cannot add attributes and a plugin
+ * may widen it (e.g. allow `a[target]`). Keep the two in step.
+ *
  * A `looseSlideSanitizeSchema` (with `figure`/`figcaption`) is an explicit
  * opt-in for v0.2 — gated by security review.
  */

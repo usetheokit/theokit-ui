@@ -277,6 +277,12 @@
       "description": "React context that coordinates aria-live declarations across nested components to prevent screen-reader double-announcement (T4.1)."
     },
     {
+      "name": "markdown",
+      "type": "registry:ui",
+      "title": "Markdown",
+      "description": "Sanitized GFM markdown renderer for untrusted text, with an allowedProtocols list for href and src."
+    },
+    {
       "name": "mcp-server-card",
       "type": "registry:ui",
       "title": "McpServerCard",

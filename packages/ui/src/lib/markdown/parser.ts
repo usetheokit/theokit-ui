@@ -29,6 +29,11 @@ export interface ParseMarkdownOptions {
    * streaming-safe preprocess pass. Default: `false`.
    */
   isStreaming?: boolean;
+  /**
+   * URL schemes kept on `href` and `src`. Relative URLs and `#` anchors are always kept.
+   * Default: the sanitizer's own default lists.
+   */
+  allowedProtocols?: readonly string[];
 }
 
 export async function parseBody(body: string): Promise<MdastRoot> {
@@ -52,7 +57,10 @@ export async function mdastToHast(tree: MdastRoot): Promise<HastRoot> {
   return hast as HastRoot;
 }
 
-export async function sanitizeHast(tree: HastRoot): Promise<HastRoot> {
+export async function sanitizeHast(
+  tree: HastRoot,
+  allowedProtocols?: readonly string[],
+): Promise<HastRoot> {
   const { sanitize, defaultSchema } = await import("hast-util-sanitize");
   // Allow class names on `pre`/`code` so syntax-highlight passes survive.
   // `defaultSchema.attributes` uses a wider union than hast-util-sanitize's
@@ -66,6 +74,15 @@ export async function sanitizeHast(tree: HastRoot): Promise<HastRoot> {
       pre: [...(defaultSchema.attributes?.pre ?? []), ["className", /./]],
       span: [...(defaultSchema.attributes?.span ?? []), ["className", /./], ["style"]],
     },
+    ...(allowedProtocols
+      ? {
+          protocols: {
+            ...(defaultSchema.protocols ?? {}),
+            href: [...allowedProtocols],
+            src: [...allowedProtocols],
+          },
+        }
+      : {}),
   } as Parameters<typeof sanitize>[1];
   const safe = sanitize(tree, schema);
   return safe.type === "root"
@@ -106,7 +123,7 @@ export async function parseMarkdownToReact(
   const preprocessed = preprocessStreaming(markdown, opts.isStreaming ?? false);
   const mdast = await parseBody(preprocessed);
   const hast = await mdastToHast(mdast);
-  const safe = await sanitizeHast(hast);
+  const safe = await sanitizeHast(hast, opts.allowedProtocols);
   return hastToReact(safe, opts.components);
 }
 
