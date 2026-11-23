@@ -25,5 +25,5 @@ export const STATS: WelcomeStats = {
   themes: 3,
   screens: 7,
   registryItems: 102,
-  tests: 1781,
+  tests: 1786,
 };
