@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.15.0
+
+### Minor Changes
+
+- c86ef27: Add `Markdown`, a sanitized markdown component for untrusted text, with an `allowedProtocols` option that sets the URL schemes kept on `href` and `src`. `ChatMessageResponse` now renders it.
+
+### Patch Changes
+
+- 8a70fb3: `Markdown` now shows the source as plain text if the parser unexpectedly rejects, instead of leaving an unhandled rejection.
+- 63490ff: Slide markdown links starting with `//`, which name another origin, now get `rel="noopener noreferrer"`.
+- 9f06e3b: `ThemeSwitcher` hydration is now covered by tests where the server and client resolve different modes: the live region renders empty on the server, the server markup survives hydration without an error, and the announcement updates after mount and after a mode toggle.
+
 ## 1.14.2
 
 ### Patch Changes
